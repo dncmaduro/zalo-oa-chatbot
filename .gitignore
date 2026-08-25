@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Build
+dist/
+build/
+.next/
+
+# Logs
+*.log
+logs/
+
+# Temporary
+tmp/
+.cache/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Imported runtime files
+imports/
+
+# Nest
+backend/dist/
+backend/coverage/
+
+# Web
+web/dist/
+web/.next/
