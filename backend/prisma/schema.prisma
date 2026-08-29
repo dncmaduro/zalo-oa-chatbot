@@ -1,8 +1,1070 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// ======================================================
+// ENUMS
+// ======================================================
+
+enum ChatChannel {
+  MOCK
+  ZALO
+}
+
+enum ChatUserType {
+  UNKNOWN
+  CUSTOMER
+  EMPLOYEE
+}
+
+enum KnowledgeAudience {
+  CUSTOMER
+  EMPLOYEE
+  OPERATOR
+  ALL
+}
+
+enum ResolutionType {
+  AUTO_RESPONSE
+  OPERATOR_TASK
+  HUMAN_CONTACT
+}
+
+enum KnowledgeVersionStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  FILE
+}
+
+enum MediaStatus {
+  READY
+  NEEDS_REVIEW
+  ARCHIVED
+}
+
+enum KnowledgeSourceType {
+  URL
+  INTERNAL_DOCUMENT
+  OTHER
+}
+
+enum ConversationStatus {
+  ACTIVE
+  HUMAN_TAKEOVER
+  CLOSED
+}
+
+enum ResolutionStatus {
+  COLLECTING_INFORMATION
+  READY
+  DISPATCHED
+  COMPLETED
+  CANCELLED
+}
+
+enum MessageSenderType {
+  USER
+  BOT
+  OPERATOR
+  SYSTEM
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  BUTTON
+  SYSTEM
+}
+
+enum MessageDeliveryStatus {
+  CREATED
+  SENT
+  DELIVERED
+  FAILED
+}
+
+enum OperatorRoleCode {
+  ADMIN
+  LEADER
+  OPERATOR
+}
+
+enum OperatorStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum OperatorTaskStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  WAITING_MORE_INFO
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum TaskResponseStatus {
+  GENERATED
+  EDITED
+  APPROVED
+  SENT
+  FAILED
+}
+
+enum HumanContactStatus {
+  PENDING
+  ASSIGNED
+  CONTACTED
+  RESOLVED
+  CANCELLED
+}
+
+enum ReviewSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ReviewStatus {
+  PENDING
+  RESOLVED
+  IGNORED
+}
+
+enum ImportMode {
+  INITIAL
+  BULK_UPDATE
+}
+
+enum ImportBatchStatus {
+  UPLOADED
+  PARSING
+  VALIDATING
+  PREVIEW_READY
+  APPLYING
+  COMPLETED
+  PARTIAL
+  FAILED
+  CANCELLED
+}
+
+enum ImportEntityType {
+  KNOWLEDGE_ITEM
+  KNOWLEDGE_DOCUMENT
+  DOCUMENT_SECTION
+  MEDIA
+  SOURCE
+  REVIEW_ISSUE
+}
+
+enum ImportOperation {
+  CREATE
+  UPDATE
+  ARCHIVE
+  NO_CHANGE
+  SKIP
+  ERROR
+}
+
+enum ImportRecordStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  APPLIED
+  FAILED
+  SKIPPED
+}
+
+enum AuditActorType {
+  SYSTEM
+  OPERATOR
+  BOT
+}
+
+// ======================================================
+// KNOWLEDGE ITEM
+// ======================================================
+
+model KnowledgeItem {
+  id                        String   @id @default(uuid()) @db.Uuid
+  code                      String   @unique
+  currentPublishedVersionId String?  @unique @map("current_published_version_id") @db.Uuid
+  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                 DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  versions                KnowledgeItemVersion[]     @relation("KnowledgeItemVersions")
+  currentPublishedVersion KnowledgeItemVersion?      @relation("KnowledgeItemCurrentPublishedVersion", fields: [currentPublishedVersionId], references: [id], onDelete: SetNull)
+  reviewIssueLinks        KnowledgeReviewIssueItem[]
+
+  @@map("knowledge_items")
+}
+
+model KnowledgeItemVersion {
+  id                      String                 @id @default(uuid()) @db.Uuid
+  knowledgeItemId         String                 @map("knowledge_item_id") @db.Uuid
+  versionNumber           Int                    @map("version_number")
+  title                   String
+  category                String
+  subCategory             String?                @map("sub_category")
+  audience                KnowledgeAudience
+  resolutionType          ResolutionType         @map("resolution_type")
+  userScenarios           String[]               @default([]) @map("user_scenarios")
+  exampleQuestions        String[]               @default([]) @map("example_questions")
+  keywords                String[]               @default([])
+  knowledgeContent        String                 @map("knowledge_content") @db.Text
+  initialResponse         String?                @map("initial_response") @db.Text
+  requiredFields          Json?                  @map("required_fields")
+  operatorTaskType        String?                @map("operator_task_type")
+  operatorInstruction     String?                @map("operator_instruction") @db.Text
+  successResponseTemplate String?                @map("success_response_template") @db.Text
+  failureResponseTemplate String?                @map("failure_response_template") @db.Text
+  acknowledgementMessage  String?                @map("acknowledgement_message") @db.Text
+  humanContactMessage     String?                @map("human_contact_message") @db.Text
+  status                  KnowledgeVersionStatus @default(DRAFT)
+  sourceSheet             String?                @map("source_sheet")
+  sourceRow               Int?                   @map("source_row")
+  createdAt               DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
+  publishedAt             DateTime?              @map("published_at") @db.Timestamptz(3)
+  archivedAt              DateTime?              @map("archived_at") @db.Timestamptz(3)
+
+  knowledgeItem        KnowledgeItem                     @relation("KnowledgeItemVersions", fields: [knowledgeItemId], references: [id], onDelete: Cascade)
+  currentPublishedFor  KnowledgeItem?                    @relation("KnowledgeItemCurrentPublishedVersion")
+  documentSections     KnowledgeItemVersionSection[]
+  media                KnowledgeItemVersionMedia[]
+  sources              KnowledgeItemVersionSource[]
+  resolutions          ConversationResolution[]
+  operatorTasks        OperatorTask[]
+  humanContactRequests HumanContactRequest[]
+  messageRefs          MessageKnowledgeItemRef[]
+  reviewIssueLinks     KnowledgeReviewIssueItemVersion[]
+
+  @@unique([knowledgeItemId, versionNumber])
+  @@index([knowledgeItemId, status])
+  @@index([category])
+  @@index([audience])
+  @@index([resolutionType])
+  @@index([status])
+  @@map("knowledge_item_versions")
+}
+
+// ======================================================
+// KNOWLEDGE DOCUMENT
+// ======================================================
+
+model KnowledgeDocument {
+  id                        String   @id @default(uuid()) @db.Uuid
+  code                      String   @unique
+  currentPublishedVersionId String?  @unique @map("current_published_version_id") @db.Uuid
+  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                 DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  versions                KnowledgeDocumentVersion[]     @relation("KnowledgeDocumentVersions")
+  currentPublishedVersion KnowledgeDocumentVersion?      @relation("KnowledgeDocumentCurrentPublishedVersion", fields: [currentPublishedVersionId], references: [id], onDelete: SetNull)
+  reviewIssueLinks        KnowledgeReviewIssueDocument[]
+
+  @@map("knowledge_documents")
+}
+
+model KnowledgeDocumentVersion {
+  id                  String                 @id @default(uuid()) @db.Uuid
+  knowledgeDocumentId String                 @map("knowledge_document_id") @db.Uuid
+  versionNumber       Int                    @map("version_number")
+  title               String
+  category            String
+  audience            KnowledgeAudience
+  status              KnowledgeVersionStatus @default(DRAFT)
+  sourceSheet         String?                @map("source_sheet")
+  sourceRow           Int?                   @map("source_row")
+  createdAt           DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
+  publishedAt         DateTime?              @map("published_at") @db.Timestamptz(3)
+  archivedAt          DateTime?              @map("archived_at") @db.Timestamptz(3)
+
+  knowledgeDocument   KnowledgeDocument                     @relation("KnowledgeDocumentVersions", fields: [knowledgeDocumentId], references: [id], onDelete: Cascade)
+  currentPublishedFor KnowledgeDocument?                    @relation("KnowledgeDocumentCurrentPublishedVersion")
+  sections            KnowledgeDocumentSection[]
+  media               KnowledgeDocumentVersionMedia[]
+  sources             KnowledgeDocumentVersionSource[]
+  reviewIssueLinks    KnowledgeReviewIssueDocumentVersion[]
+
+  @@unique([knowledgeDocumentId, versionNumber])
+  @@index([knowledgeDocumentId, status])
+  @@index([category])
+  @@index([audience])
+  @@index([status])
+  @@map("knowledge_document_versions")
+}
+
+model KnowledgeDocumentSection {
+  id                String   @id @default(uuid()) @db.Uuid
+  documentVersionId String   @map("document_version_id") @db.Uuid
+  sectionCode       String   @map("section_code")
+  sectionTitle      String   @map("section_title")
+  content           String   @db.Text
+  keywords          String[] @default([])
+  sortOrder         Int      @default(0) @map("sort_order")
+  sourceSheet       String?  @map("source_sheet")
+  sourceRow         Int?     @map("source_row")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  documentVersion  KnowledgeDocumentVersion      @relation(fields: [documentVersionId], references: [id], onDelete: Cascade)
+  knowledgeItems   KnowledgeItemVersionSection[]
+  media            KnowledgeSectionMedia[]
+  sources          KnowledgeSectionSource[]
+  messageRefs      MessageKnowledgeSectionRef[]
+  reviewIssueLinks KnowledgeReviewIssueSection[]
+
+  @@unique([documentVersionId, sectionCode])
+  @@index([documentVersionId, sortOrder])
+  @@map("knowledge_document_sections")
+}
+
+model KnowledgeItemVersionSection {
+  knowledgeItemVersionId String @map("knowledge_item_version_id") @db.Uuid
+  sectionId              String @map("section_id") @db.Uuid
+  sortOrder              Int    @default(0) @map("sort_order")
+
+  knowledgeItemVersion KnowledgeItemVersion     @relation(fields: [knowledgeItemVersionId], references: [id], onDelete: Cascade)
+  section              KnowledgeDocumentSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@id([knowledgeItemVersionId, sectionId])
+  @@index([sectionId])
+  @@map("knowledge_item_version_sections")
+}
+
+// ======================================================
+// MEDIA / CLOUDINARY
+// ======================================================
+
+model KnowledgeMedia {
+  id                     String      @id @default(uuid()) @db.Uuid
+  mediaCode              String      @unique @map("media_code")
+  type                   MediaType
+  cloudinaryPublicId     String      @unique @map("cloudinary_public_id")
+  cloudinaryResourceType String?     @map("cloudinary_resource_type")
+  cloudinaryFormat       String?     @map("cloudinary_format")
+  secureUrl              String      @map("secure_url") @db.Text
+  width                  Int?
+  height                 Int?
+  bytes                  BigInt?
+  originalFilename       String?     @map("original_filename")
+  checksum               String?
+  description            String?     @db.Text
+  sourceSheet            String?     @map("source_sheet")
+  sourceAnchor           String?     @map("source_anchor")
+  sourceRow              Int?        @map("source_row")
+  status                 MediaStatus @default(READY)
+  createdAt              DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  knowledgeItemVersions KnowledgeItemVersionMedia[]
+  documentVersions      KnowledgeDocumentVersionMedia[]
+  sections              KnowledgeSectionMedia[]
+  reviewIssueLinks      KnowledgeReviewIssueMedia[]
+
+  @@index([status])
+  @@index([checksum])
+  @@map("knowledge_media")
+}
+
+model KnowledgeItemVersionMedia {
+  knowledgeItemVersionId String  @map("knowledge_item_version_id") @db.Uuid
+  mediaId                String  @map("media_id") @db.Uuid
+  sortOrder              Int     @default(0) @map("sort_order")
+  role                   String?
+
+  knowledgeItemVersion KnowledgeItemVersion @relation(fields: [knowledgeItemVersionId], references: [id], onDelete: Cascade)
+  media                KnowledgeMedia       @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([knowledgeItemVersionId, mediaId])
+  @@index([mediaId])
+  @@map("knowledge_item_version_media")
+}
+
+model KnowledgeDocumentVersionMedia {
+  documentVersionId String  @map("document_version_id") @db.Uuid
+  mediaId           String  @map("media_id") @db.Uuid
+  sortOrder         Int     @default(0) @map("sort_order")
+  role              String?
+
+  documentVersion KnowledgeDocumentVersion @relation(fields: [documentVersionId], references: [id], onDelete: Cascade)
+  media           KnowledgeMedia           @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([documentVersionId, mediaId])
+  @@index([mediaId])
+  @@map("knowledge_document_version_media")
+}
+
+model KnowledgeSectionMedia {
+  sectionId String  @map("section_id") @db.Uuid
+  mediaId   String  @map("media_id") @db.Uuid
+  sortOrder Int     @default(0) @map("sort_order")
+  role      String?
+
+  section KnowledgeDocumentSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  media   KnowledgeMedia           @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([sectionId, mediaId])
+  @@index([mediaId])
+  @@map("knowledge_section_media")
+}
+
+// ======================================================
+// SOURCES
+// ======================================================
+
+model KnowledgeSource {
+  id          String              @id @default(uuid()) @db.Uuid
+  type        KnowledgeSourceType @default(URL)
+  title       String?
+  url         String?             @db.Text
+  externalRef String?             @map("external_ref")
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  itemVersions KnowledgeItemVersionSource[]
+  documents    KnowledgeDocumentVersionSource[]
+  sections     KnowledgeSectionSource[]
+
+  @@map("knowledge_sources")
+}
+
+model KnowledgeItemVersionSource {
+  knowledgeItemVersionId String @map("knowledge_item_version_id") @db.Uuid
+  sourceId               String @map("source_id") @db.Uuid
+
+  knowledgeItemVersion KnowledgeItemVersion @relation(fields: [knowledgeItemVersionId], references: [id], onDelete: Cascade)
+  source               KnowledgeSource      @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@id([knowledgeItemVersionId, sourceId])
+  @@index([sourceId])
+  @@map("knowledge_item_version_sources")
+}
+
+model KnowledgeDocumentVersionSource {
+  documentVersionId String @map("document_version_id") @db.Uuid
+  sourceId          String @map("source_id") @db.Uuid
+
+  documentVersion KnowledgeDocumentVersion @relation(fields: [documentVersionId], references: [id], onDelete: Cascade)
+  source          KnowledgeSource          @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@id([documentVersionId, sourceId])
+  @@index([sourceId])
+  @@map("knowledge_document_version_sources")
+}
+
+model KnowledgeSectionSource {
+  sectionId String @map("section_id") @db.Uuid
+  sourceId  String @map("source_id") @db.Uuid
+
+  section KnowledgeDocumentSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  source  KnowledgeSource          @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@id([sectionId, sourceId])
+  @@index([sourceId])
+  @@map("knowledge_section_sources")
+}
+
+// ======================================================
+// CHAT
+// ======================================================
+
+model ChatUser {
+  id             String       @id @default(uuid()) @db.Uuid
+  channel        ChatChannel
+  externalUserId String       @map("external_user_id")
+  userType       ChatUserType @default(UNKNOWN) @map("user_type")
+  displayName    String?      @map("display_name")
+  phoneNumber    String?      @map("phone_number")
+  metadata       Json?
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  conversations Conversation[]
+
+  @@unique([channel, externalUserId])
+  @@index([userType])
+  @@index([phoneNumber])
+  @@map("chat_users")
+}
+
+model Conversation {
+  id            String             @id @default(uuid()) @db.Uuid
+  chatUserId    String             @map("chat_user_id") @db.Uuid
+  status        ConversationStatus @default(ACTIVE)
+  context       Json?
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  lastMessageAt DateTime?          @map("last_message_at") @db.Timestamptz(3)
+  closedAt      DateTime?          @map("closed_at") @db.Timestamptz(3)
+
+  chatUser             ChatUser                 @relation(fields: [chatUserId], references: [id])
+  messages             Message[]
+  resolutions          ConversationResolution[]
+  operatorTasks        OperatorTask[]
+  humanContactRequests HumanContactRequest[]
+
+  @@index([chatUserId, status])
+  @@index([status, lastMessageAt])
+  @@map("conversations")
+}
+
+model ConversationResolution {
+  id                     String           @id @default(uuid()) @db.Uuid
+  conversationId         String           @map("conversation_id") @db.Uuid
+  triggerMessageId       String?          @map("trigger_message_id") @db.Uuid
+  knowledgeItemVersionId String?          @map("knowledge_item_version_id") @db.Uuid
+  resolutionType         ResolutionType   @map("resolution_type")
+  status                 ResolutionStatus @default(COLLECTING_INFORMATION)
+  requiredFields         Json?            @map("required_fields")
+  collectedFields        Json?            @map("collected_fields")
+  createdAt              DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  completedAt            DateTime?        @map("completed_at") @db.Timestamptz(3)
+
+  conversation         Conversation          @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  triggerMessage       Message?              @relation("ResolutionTriggerMessage", fields: [triggerMessageId], references: [id], onDelete: SetNull)
+  knowledgeItemVersion KnowledgeItemVersion? @relation(fields: [knowledgeItemVersionId], references: [id], onDelete: SetNull)
+  operatorTask         OperatorTask?
+  humanContactRequest  HumanContactRequest?
+
+  @@index([conversationId, status])
+  @@index([knowledgeItemVersionId])
+  @@index([resolutionType])
+  @@map("conversation_resolutions")
+}
+
+model Message {
+  id                String                @id @default(uuid()) @db.Uuid
+  conversationId    String                @map("conversation_id") @db.Uuid
+  channel           ChatChannel
+  senderType        MessageSenderType     @map("sender_type")
+  direction         MessageDirection
+  messageType       MessageType           @default(TEXT) @map("message_type")
+  content           String?               @db.Text
+  payload           Json?
+  externalMessageId String?               @map("external_message_id")
+  deliveryStatus    MessageDeliveryStatus @default(CREATED) @map("delivery_status")
+  createdAt         DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  sentAt            DateTime?             @map("sent_at") @db.Timestamptz(3)
+
+  conversation         Conversation                 @relation(fields: [conversationId], references: [id])
+  triggeredResolutions ConversationResolution[]     @relation("ResolutionTriggerMessage")
+  knowledgeItemRefs    MessageKnowledgeItemRef[]
+  knowledgeSectionRefs MessageKnowledgeSectionRef[]
+  taskResponse         OperatorTaskResponse?
+
+  @@unique([channel, externalMessageId])
+  @@index([conversationId, createdAt])
+  @@index([deliveryStatus])
+  @@map("messages")
+}
+
+model MessageKnowledgeItemRef {
+  messageId              String @map("message_id") @db.Uuid
+  knowledgeItemVersionId String @map("knowledge_item_version_id") @db.Uuid
+  retrievalScore         Float? @map("retrieval_score")
+  rank                   Int?
+
+  message              Message              @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  knowledgeItemVersion KnowledgeItemVersion @relation(fields: [knowledgeItemVersionId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, knowledgeItemVersionId])
+  @@index([knowledgeItemVersionId])
+  @@map("message_knowledge_item_refs")
+}
+
+model MessageKnowledgeSectionRef {
+  messageId      String @map("message_id") @db.Uuid
+  sectionId      String @map("section_id") @db.Uuid
+  retrievalScore Float? @map("retrieval_score")
+  rank           Int?
+
+  message Message                  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  section KnowledgeDocumentSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, sectionId])
+  @@index([sectionId])
+  @@map("message_knowledge_section_refs")
+}
+
+// ======================================================
+// RBAC
+// ======================================================
+
+model Role {
+  id          String           @id @default(uuid()) @db.Uuid
+  code        OperatorRoleCode @unique
+  name        String
+  description String?          @db.Text
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  operators   Operator[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  name        String
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String @map("role_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+// ======================================================
+// OPERATORS
+// ======================================================
+
+model Operator {
+  id           String         @id @default(uuid()) @db.Uuid
+  roleId       String         @map("role_id") @db.Uuid
+  email        String         @unique
+  fullName     String         @map("full_name")
+  passwordHash String         @map("password_hash")
+  status       OperatorStatus @default(ACTIVE)
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  role                   Role                     @relation(fields: [roleId], references: [id])
+  sessions               OperatorSession[]
+  currentTasks           OperatorTask[]           @relation("TaskCurrentAssignee")
+  taskAssignments        OperatorTaskAssignment[] @relation("TaskAssignmentOperator")
+  taskAssignmentsMade    OperatorTaskAssignment[] @relation("TaskAssignmentAssignedBy")
+  taskEvents             OperatorTaskEvent[]
+  approvedTaskResponses  OperatorTaskResponse[]
+  currentContacts        HumanContactRequest[]    @relation("ContactCurrentAssignee")
+  contactAssignments     HumanContactAssignment[] @relation("ContactAssignmentOperator")
+  contactAssignmentsMade HumanContactAssignment[] @relation("ContactAssignmentAssignedBy")
+  contactEvents          HumanContactEvent[]
+  resolvedReviewIssues   KnowledgeReviewIssue[]
+  createdImportBatches   KnowledgeImportBatch[]   @relation("ImportCreatedBy")
+  confirmedImportBatches KnowledgeImportBatch[]   @relation("ImportConfirmedBy")
+  auditLogs              AuditLog[]
+
+  @@index([roleId, status])
+  @@map("operators")
+}
+
+model OperatorSession {
+  id               String    @id @default(uuid()) @db.Uuid
+  operatorId       String    @map("operator_id") @db.Uuid
+  refreshTokenHash String    @map("refresh_token_hash") @db.Text
+  ipAddress        String?   @map("ip_address")
+  userAgent        String?   @map("user_agent") @db.Text
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  operator Operator @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+
+  @@index([operatorId])
+  @@index([expiresAt])
+  @@map("operator_sessions")
+}
+
+// ======================================================
+// OPERATOR TASKS
+// ======================================================
+
+model OperatorTask {
+  id                     String             @id @default(uuid()) @db.Uuid
+  taskCode               String             @unique @map("task_code")
+  conversationId         String             @map("conversation_id") @db.Uuid
+  resolutionId           String?            @unique @map("resolution_id") @db.Uuid
+  knowledgeItemVersionId String?            @map("knowledge_item_version_id") @db.Uuid
+  taskType               String             @map("task_type")
+  title                  String
+  description            String?            @db.Text
+  inputData              Json               @map("input_data")
+  status                 OperatorTaskStatus @default(PENDING)
+  priority               TaskPriority       @default(NORMAL)
+  currentAssigneeId      String?            @map("current_assignee_id") @db.Uuid
+  resultData             Json?              @map("result_data")
+  resultSummary          String?            @map("result_summary") @db.Text
+  createdAt              DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  assignedAt             DateTime?          @map("assigned_at") @db.Timestamptz(3)
+  startedAt              DateTime?          @map("started_at") @db.Timestamptz(3)
+  dueAt                  DateTime?          @map("due_at") @db.Timestamptz(3)
+  completedAt            DateTime?          @map("completed_at") @db.Timestamptz(3)
+
+  conversation         Conversation             @relation(fields: [conversationId], references: [id])
+  resolution           ConversationResolution?  @relation(fields: [resolutionId], references: [id], onDelete: SetNull)
+  knowledgeItemVersion KnowledgeItemVersion?    @relation(fields: [knowledgeItemVersionId], references: [id], onDelete: SetNull)
+  currentAssignee      Operator?                @relation("TaskCurrentAssignee", fields: [currentAssigneeId], references: [id], onDelete: SetNull)
+  assignments          OperatorTaskAssignment[]
+  events               OperatorTaskEvent[]
+  responses            OperatorTaskResponse[]
+
+  @@index([conversationId])
+  @@index([status, createdAt])
+  @@index([currentAssigneeId, status])
+  @@index([priority, status])
+  @@index([taskType])
+  @@map("operator_tasks")
+}
+
+model OperatorTaskAssignment {
+  id                   String    @id @default(uuid()) @db.Uuid
+  taskId               String    @map("task_id") @db.Uuid
+  operatorId           String    @map("operator_id") @db.Uuid
+  assignedByOperatorId String?   @map("assigned_by_operator_id") @db.Uuid
+  assignedAt           DateTime  @default(now()) @map("assigned_at") @db.Timestamptz(3)
+  endedAt              DateTime? @map("ended_at") @db.Timestamptz(3)
+  reason               String?   @db.Text
+
+  task               OperatorTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  operator           Operator     @relation("TaskAssignmentOperator", fields: [operatorId], references: [id])
+  assignedByOperator Operator?    @relation("TaskAssignmentAssignedBy", fields: [assignedByOperatorId], references: [id], onDelete: SetNull)
+
+  @@index([taskId, assignedAt])
+  @@index([operatorId])
+  @@map("operator_task_assignments")
+}
+
+model OperatorTaskEvent {
+  id         String              @id @default(uuid()) @db.Uuid
+  taskId     String              @map("task_id") @db.Uuid
+  operatorId String?             @map("operator_id") @db.Uuid
+  action     String
+  fromStatus OperatorTaskStatus? @map("from_status")
+  toStatus   OperatorTaskStatus? @map("to_status")
+  note       String?             @db.Text
+  data       Json?
+  createdAt  DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  task     OperatorTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  operator Operator?    @relation(fields: [operatorId], references: [id], onDelete: SetNull)
+
+  @@index([taskId, createdAt])
+  @@index([operatorId])
+  @@map("operator_task_events")
+}
+
+model OperatorTaskResponse {
+  id                   String             @id @default(uuid()) @db.Uuid
+  taskId               String             @map("task_id") @db.Uuid
+  aiGeneratedText      String             @map("ai_generated_text") @db.Text
+  finalText            String?            @map("final_text") @db.Text
+  status               TaskResponseStatus @default(GENERATED)
+  approvedByOperatorId String?            @map("approved_by_operator_id") @db.Uuid
+  sentMessageId        String?            @unique @map("sent_message_id") @db.Uuid
+  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  approvedAt           DateTime?          @map("approved_at") @db.Timestamptz(3)
+  sentAt               DateTime?          @map("sent_at") @db.Timestamptz(3)
+
+  task               OperatorTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  approvedByOperator Operator?    @relation(fields: [approvedByOperatorId], references: [id], onDelete: SetNull)
+  sentMessage        Message?     @relation(fields: [sentMessageId], references: [id], onDelete: SetNull)
+
+  @@index([taskId, status])
+  @@map("operator_task_responses")
+}
+
+// ======================================================
+// HUMAN CONTACT
+// ======================================================
+
+model HumanContactRequest {
+  id                     String             @id @default(uuid()) @db.Uuid
+  conversationId         String             @map("conversation_id") @db.Uuid
+  resolutionId           String?            @unique @map("resolution_id") @db.Uuid
+  knowledgeItemVersionId String?            @map("knowledge_item_version_id") @db.Uuid
+  fullName               String?            @map("full_name")
+  phoneNumber            String?            @map("phone_number")
+  reason                 String             @db.Text
+  context                Json?
+  status                 HumanContactStatus @default(PENDING)
+  priority               TaskPriority       @default(NORMAL)
+  currentAssigneeId      String?            @map("current_assignee_id") @db.Uuid
+  createdAt              DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  assignedAt             DateTime?          @map("assigned_at") @db.Timestamptz(3)
+  contactedAt            DateTime?          @map("contacted_at") @db.Timestamptz(3)
+  resolvedAt             DateTime?          @map("resolved_at") @db.Timestamptz(3)
+
+  conversation         Conversation             @relation(fields: [conversationId], references: [id])
+  resolution           ConversationResolution?  @relation(fields: [resolutionId], references: [id], onDelete: SetNull)
+  knowledgeItemVersion KnowledgeItemVersion?    @relation(fields: [knowledgeItemVersionId], references: [id], onDelete: SetNull)
+  currentAssignee      Operator?                @relation("ContactCurrentAssignee", fields: [currentAssigneeId], references: [id], onDelete: SetNull)
+  assignments          HumanContactAssignment[]
+  events               HumanContactEvent[]
+
+  @@index([conversationId])
+  @@index([status, createdAt])
+  @@index([currentAssigneeId, status])
+  @@index([priority, status])
+  @@map("human_contact_requests")
+}
+
+model HumanContactAssignment {
+  id                   String    @id @default(uuid()) @db.Uuid
+  requestId            String    @map("request_id") @db.Uuid
+  operatorId           String    @map("operator_id") @db.Uuid
+  assignedByOperatorId String?   @map("assigned_by_operator_id") @db.Uuid
+  assignedAt           DateTime  @default(now()) @map("assigned_at") @db.Timestamptz(3)
+  endedAt              DateTime? @map("ended_at") @db.Timestamptz(3)
+  reason               String?   @db.Text
+
+  request            HumanContactRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  operator           Operator            @relation("ContactAssignmentOperator", fields: [operatorId], references: [id])
+  assignedByOperator Operator?           @relation("ContactAssignmentAssignedBy", fields: [assignedByOperatorId], references: [id], onDelete: SetNull)
+
+  @@index([requestId, assignedAt])
+  @@index([operatorId])
+  @@map("human_contact_assignments")
+}
+
+model HumanContactEvent {
+  id         String              @id @default(uuid()) @db.Uuid
+  requestId  String              @map("request_id") @db.Uuid
+  operatorId String?             @map("operator_id") @db.Uuid
+  action     String
+  fromStatus HumanContactStatus? @map("from_status")
+  toStatus   HumanContactStatus? @map("to_status")
+  note       String?             @db.Text
+  data       Json?
+  createdAt  DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  request  HumanContactRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  operator Operator?           @relation(fields: [operatorId], references: [id], onDelete: SetNull)
+
+  @@index([requestId, createdAt])
+  @@index([operatorId])
+  @@map("human_contact_events")
+}
+
+// ======================================================
+// REVIEW / QA
+// ======================================================
+
+model KnowledgeReviewIssue {
+  id                   String         @id @default(uuid()) @db.Uuid
+  issueCode            String         @unique @map("issue_code")
+  importBatchId        String?        @map("import_batch_id") @db.Uuid
+  sourceSheet          String?        @map("source_sheet")
+  sourceRow            Int?           @map("source_row")
+  issueType            String         @map("issue_type")
+  originalContent      String?        @map("original_content") @db.Text
+  detectedProblem      String         @map("detected_problem") @db.Text
+  suggestedAction      String?        @map("suggested_action") @db.Text
+  severity             ReviewSeverity
+  status               ReviewStatus   @default(PENDING)
+  resolvedByOperatorId String?        @map("resolved_by_operator_id") @db.Uuid
+  resolvedAt           DateTime?      @map("resolved_at") @db.Timestamptz(3)
+  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  importBatch        KnowledgeImportBatch?                 @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  resolvedByOperator Operator?                             @relation(fields: [resolvedByOperatorId], references: [id], onDelete: SetNull)
+  items              KnowledgeReviewIssueItem[]
+  itemVersions       KnowledgeReviewIssueItemVersion[]
+  documents          KnowledgeReviewIssueDocument[]
+  documentVersions   KnowledgeReviewIssueDocumentVersion[]
+  sections           KnowledgeReviewIssueSection[]
+  media              KnowledgeReviewIssueMedia[]
+
+  @@index([status, severity])
+  @@index([importBatchId])
+  @@map("knowledge_review_issues")
+}
+
+model KnowledgeReviewIssueItem {
+  issueId         String @map("issue_id") @db.Uuid
+  knowledgeItemId String @map("knowledge_item_id") @db.Uuid
+
+  issue         KnowledgeReviewIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  knowledgeItem KnowledgeItem        @relation(fields: [knowledgeItemId], references: [id], onDelete: Cascade)
+
+  @@id([issueId, knowledgeItemId])
+  @@index([knowledgeItemId])
+  @@map("knowledge_review_issue_items")
+}
+
+model KnowledgeReviewIssueItemVersion {
+  issueId                String @map("issue_id") @db.Uuid
+  knowledgeItemVersionId String @map("knowledge_item_version_id") @db.Uuid
+
+  issue                KnowledgeReviewIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  knowledgeItemVersion KnowledgeItemVersion @relation(fields: [knowledgeItemVersionId], references: [id], onDelete: Cascade)
+
+  @@id([issueId, knowledgeItemVersionId])
+  @@index([knowledgeItemVersionId])
+  @@map("knowledge_review_issue_item_versions")
+}
+
+model KnowledgeReviewIssueDocument {
+  issueId             String @map("issue_id") @db.Uuid
+  knowledgeDocumentId String @map("knowledge_document_id") @db.Uuid
+
+  issue             KnowledgeReviewIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  knowledgeDocument KnowledgeDocument    @relation(fields: [knowledgeDocumentId], references: [id], onDelete: Cascade)
+
+  @@id([issueId, knowledgeDocumentId])
+  @@index([knowledgeDocumentId])
+  @@map("knowledge_review_issue_documents")
+}
+
+model KnowledgeReviewIssueDocumentVersion {
+  issueId                    String @map("issue_id") @db.Uuid
+  knowledgeDocumentVersionId String @map("knowledge_document_version_id") @db.Uuid
+
+  issue                    KnowledgeReviewIssue     @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  knowledgeDocumentVersion KnowledgeDocumentVersion @relation(fields: [knowledgeDocumentVersionId], references: [id], onDelete: Cascade)
+
+  @@id([issueId, knowledgeDocumentVersionId])
+  @@index([knowledgeDocumentVersionId])
+  @@map("knowledge_review_issue_document_versions")
+}
+
+model KnowledgeReviewIssueSection {
+  issueId   String @map("issue_id") @db.Uuid
+  sectionId String @map("section_id") @db.Uuid
+
+  issue   KnowledgeReviewIssue     @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  section KnowledgeDocumentSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@id([issueId, sectionId])
+  @@index([sectionId])
+  @@map("knowledge_review_issue_sections")
+}
+
+model KnowledgeReviewIssueMedia {
+  issueId String @map("issue_id") @db.Uuid
+  mediaId String @map("media_id") @db.Uuid
+
+  issue KnowledgeReviewIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  media KnowledgeMedia       @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([issueId, mediaId])
+  @@index([mediaId])
+  @@map("knowledge_review_issue_media")
+}
+
+// ======================================================
+// IMPORT
+// ======================================================
+
+model KnowledgeImportBatch {
+  id                    String            @id @default(uuid()) @db.Uuid
+  mode                  ImportMode        @default(BULK_UPDATE)
+  filename              String
+  fileHash              String            @map("file_hash")
+  schemaVersion         String?           @map("schema_version")
+  originalFileUrl       String?           @map("original_file_url") @db.Text
+  status                ImportBatchStatus @default(UPLOADED)
+  createdByOperatorId   String?           @map("created_by_operator_id") @db.Uuid
+  confirmedByOperatorId String?           @map("confirmed_by_operator_id") @db.Uuid
+  knowledgeItemsCount   Int               @default(0) @map("knowledge_items_count")
+  documentsCount        Int               @default(0) @map("documents_count")
+  sectionsCount         Int               @default(0) @map("sections_count")
+  mediaCount            Int               @default(0) @map("media_count")
+  reviewIssueCount      Int               @default(0) @map("review_issue_count")
+  errorLog              Json?             @map("error_log")
+  createdAt             DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  previewReadyAt        DateTime?         @map("preview_ready_at") @db.Timestamptz(3)
+  confirmedAt           DateTime?         @map("confirmed_at") @db.Timestamptz(3)
+  completedAt           DateTime?         @map("completed_at") @db.Timestamptz(3)
+
+  createdByOperator   Operator?               @relation("ImportCreatedBy", fields: [createdByOperatorId], references: [id], onDelete: SetNull)
+  confirmedByOperator Operator?               @relation("ImportConfirmedBy", fields: [confirmedByOperatorId], references: [id], onDelete: SetNull)
+  records             KnowledgeImportRecord[]
+  reviewIssues        KnowledgeReviewIssue[]
+
+  @@index([fileHash])
+  @@index([status, createdAt])
+  @@map("knowledge_import_batches")
+}
+
+model KnowledgeImportRecord {
+  id                String             @id @default(uuid()) @db.Uuid
+  batchId           String             @map("batch_id") @db.Uuid
+  entityType        ImportEntityType   @map("entity_type")
+  entityKey         String             @map("entity_key")
+  proposedOperation ImportOperation    @map("proposed_operation")
+  status            ImportRecordStatus @default(PENDING)
+  sourceSheet       String?            @map("source_sheet")
+  sourceRow         Int?               @map("source_row")
+  beforeData        Json?              @map("before_data")
+  afterData         Json?              @map("after_data")
+  diff              Json?
+  errorMessage      String?            @map("error_message") @db.Text
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  appliedAt         DateTime?          @map("applied_at") @db.Timestamptz(3)
+
+  batch KnowledgeImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId, status])
+  @@index([entityType, entityKey])
+  @@index([proposedOperation])
+  @@map("knowledge_import_records")
+}
+
+// ======================================================
+// AUDIT
+// ======================================================
+
+model AuditLog {
+  id         String         @id @default(uuid()) @db.Uuid
+  actorType  AuditActorType @map("actor_type")
+  operatorId String?        @map("operator_id") @db.Uuid
+  action     String
+  entityType String         @map("entity_type")
+  entityId   String         @map("entity_id")
+  beforeData Json?          @map("before_data")
+  afterData  Json?          @map("after_data")
+  metadata   Json?
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  operator Operator? @relation(fields: [operatorId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([operatorId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
