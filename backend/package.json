@@ -26,6 +26,7 @@
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "7.9.1",
+    "cloudinary": "^2.11.0",
     "dotenv": "^17.4.2",
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
