@@ -7,10 +7,15 @@ import {
   ImportMode,
   ImportOperation,
   ImportRecordStatus,
+  MediaStatus,
+  MediaType,
   Prisma,
+  ReviewStatus,
 } from '../../../generated/prisma/client';
 
 import { PrismaService } from '../../../prisma/prisma.service';
+
+import { ImportStorageService } from '../storage/import-storage.service';
 
 import {
   ParsedKnowledgeDocumentSection,
@@ -22,7 +27,10 @@ import {
 
 @Injectable()
 export class KnowledgeImportPreviewService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly importStorage: ImportStorageService,
+  ) {}
 
   private toJsonInput(value: unknown): Prisma.InputJsonValue {
     const serialized = JSON.stringify(value);
@@ -91,6 +99,18 @@ export class KnowledgeImportPreviewService {
     });
 
     try {
+      const originalFileUrl = await this.importStorage.saveSourceWorkbook(batch.id, file);
+
+      await this.prisma.knowledgeImportBatch.update({
+        where: {
+          id: batch.id,
+        },
+
+        data: {
+          originalFileUrl,
+        },
+      });
+
       const records = [
         ...(await this.buildKnowledgeItemRecords(batch.id, parsed.knowledgeItems)),
 
@@ -199,7 +219,20 @@ export class KnowledgeImportPreviewService {
       },
 
       include: {
-        currentPublishedVersion: true,
+        currentPublishedVersion: {
+          include: {
+            sources: {
+              include: {
+                source: true,
+              },
+            },
+            media: {
+              include: {
+                media: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -211,7 +244,7 @@ export class KnowledgeImportPreviewService {
       const afterData = this.normalizeKnowledgeItem(item);
 
       const beforeData = existing?.currentPublishedVersion
-        ? this.normalizeExistingKnowledgeItem(existing.currentPublishedVersion)
+        ? this.normalizeExistingKnowledgeItem(existing.code, existing.currentPublishedVersion)
         : null;
 
       const operation = this.detectOperation(beforeData, afterData);
@@ -245,12 +278,13 @@ export class KnowledgeImportPreviewService {
   // ====================================================
 
   private async buildDocumentRecords(batchId: string, sections: ParsedKnowledgeDocumentSection[]) {
-    const grouped = new Map<string, ParsedKnowledgeDocumentSection>();
+    const grouped = new Map<string, ParsedKnowledgeDocumentSection[]>();
 
     for (const section of sections) {
-      if (!grouped.has(section.documentCode)) {
-        grouped.set(section.documentCode, section);
-      }
+      const documentSections = grouped.get(section.documentCode) ?? [];
+
+      documentSections.push(section);
+      grouped.set(section.documentCode, documentSections);
     }
 
     const documentCodes = [...grouped.keys()];
@@ -263,33 +297,35 @@ export class KnowledgeImportPreviewService {
       },
 
       include: {
-        currentPublishedVersion: true,
+        currentPublishedVersion: {
+          include: {
+            sources: {
+              include: {
+                source: true,
+              },
+            },
+            media: {
+              include: {
+                media: true,
+              },
+            },
+          },
+        },
       },
     });
 
     const existingMap = new Map(existingDocuments.map((document) => [document.code, document]));
 
-    return [...grouped.entries()].map(([documentCode, section]) => {
+    return [...grouped.entries()].map(([documentCode, documentSections]) => {
       const existing = existingMap.get(documentCode);
 
-      const afterData = {
-        code: documentCode,
-        title: section.documentTitle,
-        category: section.category,
-        audience: section.audience,
-      };
+      const afterData = this.normalizeKnowledgeDocument(documentCode, documentSections);
 
       const beforeData = existing?.currentPublishedVersion
-        ? {
-            code: existing.code,
-
-            title: existing.currentPublishedVersion.title,
-
-            category: existing.currentPublishedVersion.category,
-
-            audience: existing.currentPublishedVersion.audience,
-          }
+        ? this.normalizeExistingKnowledgeDocument(existing.code, existing.currentPublishedVersion)
         : null;
+
+      const firstSection = documentSections[0];
 
       return {
         batchId,
@@ -302,9 +338,9 @@ export class KnowledgeImportPreviewService {
 
         status: ImportRecordStatus.PENDING,
 
-        sourceSheet: section.sourceSheet,
+        sourceSheet: firstSection.sourceSheet,
 
-        sourceRow: section.sourceRow,
+        sourceRow: firstSection.sourceRow,
 
         beforeData,
 
@@ -332,7 +368,20 @@ export class KnowledgeImportPreviewService {
       include: {
         currentPublishedVersion: {
           include: {
-            sections: true,
+            sections: {
+              include: {
+                sources: {
+                  include: {
+                    source: true,
+                  },
+                },
+                media: {
+                  include: {
+                    media: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -348,6 +397,19 @@ export class KnowledgeImportPreviewService {
           content: string;
           keywords: string[];
           sortOrder: number;
+          sourceSheet: string | null;
+          sourceRow: number | null;
+          sources: Array<{
+            source: {
+              url: string | null;
+            };
+          }>;
+          media: Array<{
+            sortOrder: number;
+            media: {
+              mediaCode: string;
+            };
+          }>;
         };
       }
     >();
@@ -373,36 +435,34 @@ export class KnowledgeImportPreviewService {
             keywords: section.keywords,
 
             sortOrder: section.sortOrder,
+
+            sourceSheet: section.sourceSheet,
+
+            sourceRow: section.sourceRow,
+
+            sources: section.sources,
+
+            media: section.media,
           },
         });
       }
     }
 
-    return sections.map((section, index) => {
+    const sectionSortOrders = new Map<string, number>();
+
+    return sections.map((section) => {
       const entityKey = `${section.documentCode}:${section.sectionCode}`;
 
       const existing = sectionMap.get(entityKey);
 
-      const afterData = {
-        documentCode: section.documentCode,
+      const sortOrder = sectionSortOrders.get(section.documentCode) ?? 0;
 
-        sectionCode: section.sectionCode,
+      sectionSortOrders.set(section.documentCode, sortOrder + 1);
 
-        sectionTitle: section.sectionTitle,
-
-        content: section.content,
-
-        keywords: section.keywords,
-
-        sortOrder: index,
-      };
+      const afterData = this.normalizeKnowledgeDocumentSection(section, sortOrder);
 
       const beforeData = existing
-        ? {
-            documentCode: existing.documentCode,
-
-            ...existing.section,
-          }
+        ? this.normalizeExistingKnowledgeDocumentSection(existing.documentCode, existing.section)
         : null;
 
       return {
@@ -449,36 +509,10 @@ export class KnowledgeImportPreviewService {
     return images.map((image) => {
       const existing = existingMap.get(image.imageId);
 
-      const checksum = image.buffer ? createHash('sha256').update(image.buffer).digest('hex') : null;
-
-      const afterData = {
-        mediaCode: image.imageId,
-
-        knowledgeCode: image.knowledgeCode ?? null,
-
-        documentCode: image.documentCode ?? null,
-
-        sectionCode: image.sectionCode ?? null,
-
-        imageOrder: image.imageOrder,
-
-        description: image.description ?? null,
-
-        extension: image.extension ?? null,
-
-        mimeType: image.mimeType ?? null,
-
-        checksum,
-      };
+      const afterData = this.normalizeKnowledgeMedia(image);
 
       const beforeData = existing
-        ? {
-            mediaCode: existing.mediaCode,
-
-            description: existing.description,
-
-            checksum: existing.checksum,
-          }
+        ? this.normalizeExistingKnowledgeMedia(existing)
         : null;
 
       return {
@@ -518,6 +552,14 @@ export class KnowledgeImportPreviewService {
           in: issueCodes,
         },
       },
+
+      include: {
+        items: {
+          include: {
+            knowledgeItem: true,
+          },
+        },
+      },
     });
 
     const existingMap = new Map(existing.map((issue) => [issue.issueCode, issue]));
@@ -525,40 +567,10 @@ export class KnowledgeImportPreviewService {
     return issues.map((issue) => {
       const current = existingMap.get(issue.issueId);
 
-      const afterData = {
-        issueCode: issue.issueId,
-
-        knowledgeCode: issue.knowledgeCode ?? null,
-
-        issueType: issue.issueType,
-
-        originalContent: issue.originalContent ?? null,
-
-        detectedProblem: issue.detectedProblem,
-
-        suggestedAction: issue.suggestedAction ?? null,
-
-        severity: issue.severity,
-
-        reviewStatus: issue.reviewStatus,
-      };
+      const afterData = this.normalizeReviewIssue(issue);
 
       const beforeData = current
-        ? {
-            issueCode: current.issueCode,
-
-            issueType: current.issueType,
-
-            originalContent: current.originalContent,
-
-            detectedProblem: current.detectedProblem,
-
-            suggestedAction: current.suggestedAction,
-
-            severity: current.severity,
-
-            status: current.status,
-          }
+        ? this.normalizeExistingReviewIssue(current)
         : null;
 
       return {
@@ -613,7 +625,7 @@ export class KnowledgeImportPreviewService {
 
       initialResponse: item.initialResponse ?? null,
 
-      requiredFields: item.requiredFields,
+      requiredFields: this.normalizeJsonValue(item.requiredFields),
 
       operatorTaskType: item.operatorTaskType ?? null,
 
@@ -627,15 +639,17 @@ export class KnowledgeImportPreviewService {
 
       humanContactMessage: item.humanContactMessage ?? null,
 
-      sourceUrls: item.sourceUrls,
+      sourceUrls: this.normalizeSourceUrls(item.sourceUrls),
 
-      imageIds: item.imageIds,
+      imageIds: this.normalizeParsedImageIds(item.imageIds),
 
-      status: item.status,
+      sourceSheet: item.sourceSheet ?? null,
+
+      sourceRow: item.sourceRow ?? null,
     };
   }
 
-  private normalizeExistingKnowledgeItem(version: {
+  private normalizeExistingKnowledgeItem(code: string, version: {
     title: string;
     category: string;
     subCategory: string | null;
@@ -653,8 +667,23 @@ export class KnowledgeImportPreviewService {
     failureResponseTemplate: string | null;
     acknowledgementMessage: string | null;
     humanContactMessage: string | null;
+    sourceSheet: string | null;
+    sourceRow: number | null;
+    sources: Array<{
+      source: {
+        url: string | null;
+      };
+    }>;
+    media: Array<{
+      sortOrder: number;
+      media: {
+        mediaCode: string;
+      };
+    }>;
   }) {
     return {
+      code,
+
       title: version.title,
 
       category: version.category,
@@ -675,7 +704,7 @@ export class KnowledgeImportPreviewService {
 
       initialResponse: version.initialResponse,
 
-      requiredFields: version.requiredFields,
+      requiredFields: this.normalizeJsonValue(version.requiredFields),
 
       operatorTaskType: version.operatorTaskType,
 
@@ -688,7 +717,307 @@ export class KnowledgeImportPreviewService {
       acknowledgementMessage: version.acknowledgementMessage,
 
       humanContactMessage: version.humanContactMessage,
+
+      sourceUrls: this.normalizeSourceUrls(version.sources.map((link) => link.source.url)),
+
+      imageIds: this.normalizeExistingImageIds(version.media),
+
+      sourceSheet: version.sourceSheet,
+
+      sourceRow: version.sourceRow,
     };
+  }
+
+  private normalizeKnowledgeDocument(documentCode: string, sections: ParsedKnowledgeDocumentSection[]) {
+    const firstSection = sections[0];
+
+    return {
+      code: documentCode,
+
+      title: firstSection.documentTitle,
+
+      category: firstSection.category,
+
+      audience: firstSection.audience,
+
+      sourceUrls: this.normalizeSourceUrls(sections.flatMap((section) => section.sourceUrls)),
+
+      imageIds: this.normalizeParsedImageIds(sections.flatMap((section) => section.imageIds)),
+
+      sourceSheet: firstSection.sourceSheet ?? null,
+
+      sourceRow: firstSection.sourceRow ?? null,
+    };
+  }
+
+  private normalizeExistingKnowledgeDocument(code: string, version: {
+    title: string;
+    category: string;
+    audience: unknown;
+    sourceSheet: string | null;
+    sourceRow: number | null;
+    sources: Array<{
+      source: {
+        url: string | null;
+      };
+    }>;
+    media: Array<{
+      sortOrder: number;
+      media: {
+        mediaCode: string;
+      };
+    }>;
+  }) {
+    return {
+      code,
+
+      title: version.title,
+
+      category: version.category,
+
+      audience: version.audience,
+
+      sourceUrls: this.normalizeSourceUrls(version.sources.map((link) => link.source.url)),
+
+      imageIds: this.normalizeExistingImageIds(version.media),
+
+      sourceSheet: version.sourceSheet,
+
+      sourceRow: version.sourceRow,
+    };
+  }
+
+  private normalizeKnowledgeDocumentSection(section: ParsedKnowledgeDocumentSection, sortOrder: number) {
+    return {
+      documentCode: section.documentCode,
+
+      sectionCode: section.sectionCode,
+
+      sectionTitle: section.sectionTitle,
+
+      content: section.content,
+
+      keywords: section.keywords,
+
+      sortOrder,
+
+      sourceUrls: this.normalizeSourceUrls(section.sourceUrls),
+
+      imageIds: this.normalizeParsedImageIds(section.imageIds),
+
+      sourceSheet: section.sourceSheet ?? null,
+
+      sourceRow: section.sourceRow ?? null,
+    };
+  }
+
+  private normalizeExistingKnowledgeDocumentSection(documentCode: string, section: {
+    sectionCode: string;
+    sectionTitle: string;
+    content: string;
+    keywords: string[];
+    sortOrder: number;
+    sourceSheet: string | null;
+    sourceRow: number | null;
+    sources: Array<{
+      source: {
+        url: string | null;
+      };
+    }>;
+    media: Array<{
+      sortOrder: number;
+      media: {
+        mediaCode: string;
+      };
+    }>;
+  }) {
+    return {
+      documentCode,
+
+      sectionCode: section.sectionCode,
+
+      sectionTitle: section.sectionTitle,
+
+      content: section.content,
+
+      keywords: section.keywords,
+
+      sortOrder: section.sortOrder,
+
+      sourceUrls: this.normalizeSourceUrls(section.sources.map((link) => link.source.url)),
+
+      imageIds: this.normalizeExistingImageIds(section.media),
+
+      sourceSheet: section.sourceSheet,
+
+      sourceRow: section.sourceRow,
+    };
+  }
+
+  private normalizeKnowledgeMedia(image: ParsedKnowledgeImage) {
+    return {
+      mediaCode: image.imageId,
+
+      type: MediaType.IMAGE,
+
+      description: image.description ?? null,
+
+      checksum: image.buffer ? createHash('sha256').update(image.buffer).digest('hex') : null,
+
+      originalFilename: image.extension ? `${image.imageId}.${image.extension}` : image.imageId,
+
+      sourceSheet: image.sourceSheet ?? null,
+
+      sourceAnchor: image.sourceAnchor ?? null,
+
+      sourceRow: image.sourceRow ?? null,
+
+      status: image.status === 'NEEDS_REVIEW' ? MediaStatus.NEEDS_REVIEW : MediaStatus.READY,
+    };
+  }
+
+  private normalizeExistingKnowledgeMedia(media: {
+    mediaCode: string;
+    type: unknown;
+    description: string | null;
+    checksum: string | null;
+    originalFilename: string | null;
+    sourceSheet: string | null;
+    sourceAnchor: string | null;
+    sourceRow: number | null;
+    status: unknown;
+  }) {
+    return {
+      mediaCode: media.mediaCode,
+
+      type: media.type,
+
+      description: media.description,
+
+      checksum: media.checksum,
+
+      originalFilename: media.originalFilename,
+
+      sourceSheet: media.sourceSheet,
+
+      sourceAnchor: media.sourceAnchor,
+
+      sourceRow: media.sourceRow,
+
+      status: media.status,
+    };
+  }
+
+  private normalizeReviewIssue(issue: ParsedReviewIssue) {
+    return {
+      issueCode: issue.issueId,
+
+      knowledgeCodes: issue.knowledgeCode ? [issue.knowledgeCode] : [],
+
+      issueType: issue.issueType,
+
+      originalContent: issue.originalContent ?? null,
+
+      detectedProblem: issue.detectedProblem,
+
+      suggestedAction: issue.suggestedAction ?? null,
+
+      severity: issue.severity,
+
+      status: this.normalizeReviewStatus(issue.reviewStatus),
+
+      sourceSheet: issue.sourceSheet ?? null,
+
+      sourceRow: issue.sourceRow ?? null,
+    };
+  }
+
+  private normalizeExistingReviewIssue(issue: {
+    issueCode: string;
+    issueType: string;
+    originalContent: string | null;
+    detectedProblem: string;
+    suggestedAction: string | null;
+    severity: unknown;
+    status: unknown;
+    sourceSheet: string | null;
+    sourceRow: number | null;
+    items: Array<{
+      knowledgeItem: {
+        code: string;
+      };
+    }>;
+  }) {
+    return {
+      issueCode: issue.issueCode,
+
+      knowledgeCodes: issue.items.map((link) => link.knowledgeItem.code).sort(),
+
+      issueType: issue.issueType,
+
+      originalContent: issue.originalContent,
+
+      detectedProblem: issue.detectedProblem,
+
+      suggestedAction: issue.suggestedAction,
+
+      severity: issue.severity,
+
+      status: issue.status,
+
+      sourceSheet: issue.sourceSheet,
+
+      sourceRow: issue.sourceRow,
+    };
+  }
+
+  private normalizeSourceUrls(urls: Array<string | null | undefined>) {
+    return [...new Set(urls.filter((url): url is string => url !== null && url !== undefined))].sort();
+  }
+
+  private normalizeParsedImageIds(imageIds: string[]) {
+    return [...new Set(imageIds)];
+  }
+
+  private normalizeExistingImageIds(links: Array<{
+    sortOrder: number;
+    media: {
+      mediaCode: string;
+    };
+  }>) {
+    return [...links]
+      .sort((left, right) => left.sortOrder - right.sortOrder || left.media.mediaCode.localeCompare(right.media.mediaCode))
+      .map((link) => link.media.mediaCode);
+  }
+
+  private normalizeReviewStatus(value: string): ReviewStatus {
+    if (value === ReviewStatus.RESOLVED) {
+      return ReviewStatus.RESOLVED;
+    }
+
+    if (value === ReviewStatus.IGNORED) {
+      return ReviewStatus.IGNORED;
+    }
+
+    return ReviewStatus.PENDING;
+  }
+
+  private normalizeJsonValue(value: unknown): unknown {
+    if (value === null || typeof value !== 'object') {
+      return value;
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((item) => this.normalizeJsonValue(item));
+    }
+
+    return Object.keys(value as Record<string, unknown>)
+      .sort()
+      .reduce<Record<string, unknown>>((result, key) => {
+        result[key] = this.normalizeJsonValue((value as Record<string, unknown>)[key]);
+
+        return result;
+      }, {});
   }
 
   private detectOperation(beforeData: unknown, afterData: unknown): ImportOperation {
@@ -742,24 +1071,6 @@ export class KnowledgeImportPreviewService {
   }
 
   private stableStringify(value: unknown): string {
-    if (value === null || typeof value !== 'object') {
-      return JSON.stringify(value);
-    }
-
-    if (Array.isArray(value)) {
-      return JSON.stringify(value.map((item) => JSON.parse(this.stableStringify(item))));
-    }
-
-    const object = value as Record<string, unknown>;
-
-    const sorted = Object.keys(object)
-      .sort()
-      .reduce<Record<string, unknown>>((result, key) => {
-        result[key] = object[key];
-
-        return result;
-      }, {});
-
-    return JSON.stringify(sorted);
+    return JSON.stringify(this.normalizeJsonValue(value)) ?? 'undefined';
   }
 }

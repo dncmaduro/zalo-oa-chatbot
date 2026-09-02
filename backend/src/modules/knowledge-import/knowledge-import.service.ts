@@ -3,6 +3,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WorkbookParser } from './parsers/workbook.parser';
 import { KnowledgeImportValidator } from './validators/knowledge-import.validator';
 import { KnowledgeImportPreviewService } from './preview/knowledge-import-preview.service';
+import { KnowledgeImportApplyService } from './apply/knowledge-import-apply.service';
 
 @Injectable()
 export class KnowledgeImportService {
@@ -10,6 +11,7 @@ export class KnowledgeImportService {
     private readonly workbookParser: WorkbookParser,
     private readonly validator: KnowledgeImportValidator,
     private readonly previewService: KnowledgeImportPreviewService,
+    private readonly applyService: KnowledgeImportApplyService,
   ) {}
 
   async preview(file: Express.Multer.File) {
@@ -130,5 +132,9 @@ export class KnowledgeImportService {
 
       records: persistedPreview.records,
     };
+  }
+
+  apply(batchId: string) {
+    return this.applyService.apply(batchId);
   }
 }

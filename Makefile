@@ -6,7 +6,7 @@ COMPOSE ?= docker compose
 API_URL ?= http://localhost:3000
 
 .DEFAULT_GOAL := help
-.PHONY: help install dev build lint db-up db-down db-logs db-access prisma-generate migrate migrate-new seed studio prisma-format prisma-validate kb-preview check
+.PHONY: help install dev build lint db-up db-down db-logs db-access prisma-generate migrate migrate-new seed studio prisma-format prisma-validate kb-preview kb-clear check
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ { printf "  make %-18s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
@@ -61,5 +61,11 @@ kb-preview: ## POST an .xlsx preview; usage: make kb-preview file=/path/to/file.
 	@test -n "$(file)" || (echo "Missing workbook path. Usage: make kb-preview file=/path/to/file.xlsx" >&2; exit 2)
 	@test -f "$(file)" || (echo "Workbook not found: $(file)" >&2; exit 2)
 	curl --fail-with-body --show-error --form "file=@$(file)" "$(API_URL)/knowledge-import/preview"
+
+kb-clear: ## Clear Knowledge Base import data
+	$(COMPOSE) exec postgres psql \
+		-U postgres \
+		-d zalo_chatbot \
+		-c "TRUNCATE TABLE knowledge_import_batches, knowledge_items, knowledge_documents, knowledge_media, knowledge_review_issues, knowledge_sources RESTART IDENTITY CASCADE;"
 
 check: prisma-validate prisma-generate build ## Validate schema, generate Prisma Client, and build
