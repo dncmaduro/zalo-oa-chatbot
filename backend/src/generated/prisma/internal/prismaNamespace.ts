@@ -3637,6 +3637,9 @@ export const KnowledgeItemVersionScalarFieldEnum = {
   failureResponseTemplate: 'failureResponseTemplate',
   acknowledgementMessage: 'acknowledgementMessage',
   humanContactMessage: 'humanContactMessage',
+  embeddingModel: 'embeddingModel',
+  embeddingContentHash: 'embeddingContentHash',
+  embeddedAt: 'embeddedAt',
   status: 'status',
   sourceSheet: 'sourceSheet',
   sourceRow: 'sourceRow',
@@ -3689,6 +3692,9 @@ export const KnowledgeDocumentSectionScalarFieldEnum = {
   sortOrder: 'sortOrder',
   sourceSheet: 'sourceSheet',
   sourceRow: 'sourceRow',
+  embeddingModel: 'embeddingModel',
+  embeddingContentHash: 'embeddingContentHash',
+  embeddedAt: 'embeddedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

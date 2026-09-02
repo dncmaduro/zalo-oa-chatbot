@@ -45,6 +45,9 @@ export type KnowledgeDocumentSectionMinAggregateOutputType = {
   sortOrder: number | null
   sourceSheet: string | null
   sourceRow: number | null
+  embeddingModel: string | null
+  embeddingContentHash: string | null
+  embeddedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -58,6 +61,9 @@ export type KnowledgeDocumentSectionMaxAggregateOutputType = {
   sortOrder: number | null
   sourceSheet: string | null
   sourceRow: number | null
+  embeddingModel: string | null
+  embeddingContentHash: string | null
+  embeddedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -72,6 +78,9 @@ export type KnowledgeDocumentSectionCountAggregateOutputType = {
   sortOrder: number
   sourceSheet: number
   sourceRow: number
+  embeddingModel: number
+  embeddingContentHash: number
+  embeddedAt: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -97,6 +106,9 @@ export type KnowledgeDocumentSectionMinAggregateInputType = {
   sortOrder?: true
   sourceSheet?: true
   sourceRow?: true
+  embeddingModel?: true
+  embeddingContentHash?: true
+  embeddedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -110,6 +122,9 @@ export type KnowledgeDocumentSectionMaxAggregateInputType = {
   sortOrder?: true
   sourceSheet?: true
   sourceRow?: true
+  embeddingModel?: true
+  embeddingContentHash?: true
+  embeddedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -124,6 +139,9 @@ export type KnowledgeDocumentSectionCountAggregateInputType = {
   sortOrder?: true
   sourceSheet?: true
   sourceRow?: true
+  embeddingModel?: true
+  embeddingContentHash?: true
+  embeddedAt?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -225,6 +243,9 @@ export type KnowledgeDocumentSectionGroupByOutputType = {
   sortOrder: number
   sourceSheet: string | null
   sourceRow: number | null
+  embeddingModel: string | null
+  embeddingContentHash: string | null
+  embeddedAt: Date | null
   createdAt: Date
   updatedAt: Date
   _count: KnowledgeDocumentSectionCountAggregateOutputType | null
@@ -262,6 +283,9 @@ export type KnowledgeDocumentSectionWhereInput = {
   sortOrder?: Prisma.IntFilter<"KnowledgeDocumentSection"> | number
   sourceSheet?: Prisma.StringNullableFilter<"KnowledgeDocumentSection"> | string | null
   sourceRow?: Prisma.IntNullableFilter<"KnowledgeDocumentSection"> | number | null
+  embeddingModel?: Prisma.StringNullableFilter<"KnowledgeDocumentSection"> | string | null
+  embeddingContentHash?: Prisma.StringNullableFilter<"KnowledgeDocumentSection"> | string | null
+  embeddedAt?: Prisma.DateTimeNullableFilter<"KnowledgeDocumentSection"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"KnowledgeDocumentSection"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"KnowledgeDocumentSection"> | Date | string
   documentVersion?: Prisma.XOR<Prisma.KnowledgeDocumentVersionScalarRelationFilter, Prisma.KnowledgeDocumentVersionWhereInput>
@@ -282,6 +306,9 @@ export type KnowledgeDocumentSectionOrderByWithRelationInput = {
   sortOrder?: Prisma.SortOrder
   sourceSheet?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceRow?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddingModel?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddingContentHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   documentVersion?: Prisma.KnowledgeDocumentVersionOrderByWithRelationInput
@@ -306,6 +333,9 @@ export type KnowledgeDocumentSectionWhereUniqueInput = Prisma.AtLeast<{
   sortOrder?: Prisma.IntFilter<"KnowledgeDocumentSection"> | number
   sourceSheet?: Prisma.StringNullableFilter<"KnowledgeDocumentSection"> | string | null
   sourceRow?: Prisma.IntNullableFilter<"KnowledgeDocumentSection"> | number | null
+  embeddingModel?: Prisma.StringNullableFilter<"KnowledgeDocumentSection"> | string | null
+  embeddingContentHash?: Prisma.StringNullableFilter<"KnowledgeDocumentSection"> | string | null
+  embeddedAt?: Prisma.DateTimeNullableFilter<"KnowledgeDocumentSection"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"KnowledgeDocumentSection"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"KnowledgeDocumentSection"> | Date | string
   documentVersion?: Prisma.XOR<Prisma.KnowledgeDocumentVersionScalarRelationFilter, Prisma.KnowledgeDocumentVersionWhereInput>
@@ -326,6 +356,9 @@ export type KnowledgeDocumentSectionOrderByWithAggregationInput = {
   sortOrder?: Prisma.SortOrder
   sourceSheet?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceRow?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddingModel?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddingContentHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.KnowledgeDocumentSectionCountOrderByAggregateInput
@@ -348,6 +381,9 @@ export type KnowledgeDocumentSectionScalarWhereWithAggregatesInput = {
   sortOrder?: Prisma.IntWithAggregatesFilter<"KnowledgeDocumentSection"> | number
   sourceSheet?: Prisma.StringNullableWithAggregatesFilter<"KnowledgeDocumentSection"> | string | null
   sourceRow?: Prisma.IntNullableWithAggregatesFilter<"KnowledgeDocumentSection"> | number | null
+  embeddingModel?: Prisma.StringNullableWithAggregatesFilter<"KnowledgeDocumentSection"> | string | null
+  embeddingContentHash?: Prisma.StringNullableWithAggregatesFilter<"KnowledgeDocumentSection"> | string | null
+  embeddedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"KnowledgeDocumentSection"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"KnowledgeDocumentSection"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"KnowledgeDocumentSection"> | Date | string
 }
@@ -361,6 +397,9 @@ export type KnowledgeDocumentSectionCreateInput = {
   sortOrder?: number
   sourceSheet?: string | null
   sourceRow?: number | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   documentVersion: Prisma.KnowledgeDocumentVersionCreateNestedOneWithoutSectionsInput
@@ -381,6 +420,9 @@ export type KnowledgeDocumentSectionUncheckedCreateInput = {
   sortOrder?: number
   sourceSheet?: string | null
   sourceRow?: number | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   knowledgeItems?: Prisma.KnowledgeItemVersionSectionUncheckedCreateNestedManyWithoutSectionInput
@@ -399,6 +441,9 @@ export type KnowledgeDocumentSectionUpdateInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   documentVersion?: Prisma.KnowledgeDocumentVersionUpdateOneRequiredWithoutSectionsNestedInput
@@ -419,6 +464,9 @@ export type KnowledgeDocumentSectionUncheckedUpdateInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   knowledgeItems?: Prisma.KnowledgeItemVersionSectionUncheckedUpdateManyWithoutSectionNestedInput
@@ -438,6 +486,9 @@ export type KnowledgeDocumentSectionCreateManyInput = {
   sortOrder?: number
   sourceSheet?: string | null
   sourceRow?: number | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -451,6 +502,9 @@ export type KnowledgeDocumentSectionUpdateManyMutationInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -465,6 +519,9 @@ export type KnowledgeDocumentSectionUncheckedUpdateManyInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -494,6 +551,9 @@ export type KnowledgeDocumentSectionCountOrderByAggregateInput = {
   sortOrder?: Prisma.SortOrder
   sourceSheet?: Prisma.SortOrder
   sourceRow?: Prisma.SortOrder
+  embeddingModel?: Prisma.SortOrder
+  embeddingContentHash?: Prisma.SortOrder
+  embeddedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -512,6 +572,9 @@ export type KnowledgeDocumentSectionMaxOrderByAggregateInput = {
   sortOrder?: Prisma.SortOrder
   sourceSheet?: Prisma.SortOrder
   sourceRow?: Prisma.SortOrder
+  embeddingModel?: Prisma.SortOrder
+  embeddingContentHash?: Prisma.SortOrder
+  embeddedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -525,6 +588,9 @@ export type KnowledgeDocumentSectionMinOrderByAggregateInput = {
   sortOrder?: Prisma.SortOrder
   sourceSheet?: Prisma.SortOrder
   sourceRow?: Prisma.SortOrder
+  embeddingModel?: Prisma.SortOrder
+  embeddingContentHash?: Prisma.SortOrder
+  embeddedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -669,6 +735,9 @@ export type KnowledgeDocumentSectionCreateWithoutDocumentVersionInput = {
   sortOrder?: number
   sourceSheet?: string | null
   sourceRow?: number | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   knowledgeItems?: Prisma.KnowledgeItemVersionSectionCreateNestedManyWithoutSectionInput
@@ -687,6 +756,9 @@ export type KnowledgeDocumentSectionUncheckedCreateWithoutDocumentVersionInput =
   sortOrder?: number
   sourceSheet?: string | null
   sourceRow?: number | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   knowledgeItems?: Prisma.KnowledgeItemVersionSectionUncheckedCreateNestedManyWithoutSectionInput
@@ -735,6 +807,9 @@ export type KnowledgeDocumentSectionScalarWhereInput = {
   sortOrder?: Prisma.IntFilter<"KnowledgeDocumentSection"> | number
   sourceSheet?: Prisma.StringNullableFilter<"KnowledgeDocumentSection"> | string | null
   sourceRow?: Prisma.IntNullableFilter<"KnowledgeDocumentSection"> | number | null
+  embeddingModel?: Prisma.StringNullableFilter<"KnowledgeDocumentSection"> | string | null
+  embeddingContentHash?: Prisma.StringNullableFilter<"KnowledgeDocumentSection"> | string | null
+  embeddedAt?: Prisma.DateTimeNullableFilter<"KnowledgeDocumentSection"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"KnowledgeDocumentSection"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"KnowledgeDocumentSection"> | Date | string
 }
@@ -748,6 +823,9 @@ export type KnowledgeDocumentSectionCreateWithoutKnowledgeItemsInput = {
   sortOrder?: number
   sourceSheet?: string | null
   sourceRow?: number | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   documentVersion: Prisma.KnowledgeDocumentVersionCreateNestedOneWithoutSectionsInput
@@ -767,6 +845,9 @@ export type KnowledgeDocumentSectionUncheckedCreateWithoutKnowledgeItemsInput = 
   sortOrder?: number
   sourceSheet?: string | null
   sourceRow?: number | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   media?: Prisma.KnowledgeSectionMediaUncheckedCreateNestedManyWithoutSectionInput
@@ -800,6 +881,9 @@ export type KnowledgeDocumentSectionUpdateWithoutKnowledgeItemsInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   documentVersion?: Prisma.KnowledgeDocumentVersionUpdateOneRequiredWithoutSectionsNestedInput
@@ -819,6 +903,9 @@ export type KnowledgeDocumentSectionUncheckedUpdateWithoutKnowledgeItemsInput = 
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   media?: Prisma.KnowledgeSectionMediaUncheckedUpdateManyWithoutSectionNestedInput
@@ -836,6 +923,9 @@ export type KnowledgeDocumentSectionCreateWithoutMediaInput = {
   sortOrder?: number
   sourceSheet?: string | null
   sourceRow?: number | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   documentVersion: Prisma.KnowledgeDocumentVersionCreateNestedOneWithoutSectionsInput
@@ -855,6 +945,9 @@ export type KnowledgeDocumentSectionUncheckedCreateWithoutMediaInput = {
   sortOrder?: number
   sourceSheet?: string | null
   sourceRow?: number | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   knowledgeItems?: Prisma.KnowledgeItemVersionSectionUncheckedCreateNestedManyWithoutSectionInput
@@ -888,6 +981,9 @@ export type KnowledgeDocumentSectionUpdateWithoutMediaInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   documentVersion?: Prisma.KnowledgeDocumentVersionUpdateOneRequiredWithoutSectionsNestedInput
@@ -907,6 +1003,9 @@ export type KnowledgeDocumentSectionUncheckedUpdateWithoutMediaInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   knowledgeItems?: Prisma.KnowledgeItemVersionSectionUncheckedUpdateManyWithoutSectionNestedInput
@@ -924,6 +1023,9 @@ export type KnowledgeDocumentSectionCreateWithoutSourcesInput = {
   sortOrder?: number
   sourceSheet?: string | null
   sourceRow?: number | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   documentVersion: Prisma.KnowledgeDocumentVersionCreateNestedOneWithoutSectionsInput
@@ -943,6 +1045,9 @@ export type KnowledgeDocumentSectionUncheckedCreateWithoutSourcesInput = {
   sortOrder?: number
   sourceSheet?: string | null
   sourceRow?: number | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   knowledgeItems?: Prisma.KnowledgeItemVersionSectionUncheckedCreateNestedManyWithoutSectionInput
@@ -976,6 +1081,9 @@ export type KnowledgeDocumentSectionUpdateWithoutSourcesInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   documentVersion?: Prisma.KnowledgeDocumentVersionUpdateOneRequiredWithoutSectionsNestedInput
@@ -995,6 +1103,9 @@ export type KnowledgeDocumentSectionUncheckedUpdateWithoutSourcesInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   knowledgeItems?: Prisma.KnowledgeItemVersionSectionUncheckedUpdateManyWithoutSectionNestedInput
@@ -1012,6 +1123,9 @@ export type KnowledgeDocumentSectionCreateWithoutMessageRefsInput = {
   sortOrder?: number
   sourceSheet?: string | null
   sourceRow?: number | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   documentVersion: Prisma.KnowledgeDocumentVersionCreateNestedOneWithoutSectionsInput
@@ -1031,6 +1145,9 @@ export type KnowledgeDocumentSectionUncheckedCreateWithoutMessageRefsInput = {
   sortOrder?: number
   sourceSheet?: string | null
   sourceRow?: number | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   knowledgeItems?: Prisma.KnowledgeItemVersionSectionUncheckedCreateNestedManyWithoutSectionInput
@@ -1064,6 +1181,9 @@ export type KnowledgeDocumentSectionUpdateWithoutMessageRefsInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   documentVersion?: Prisma.KnowledgeDocumentVersionUpdateOneRequiredWithoutSectionsNestedInput
@@ -1083,6 +1203,9 @@ export type KnowledgeDocumentSectionUncheckedUpdateWithoutMessageRefsInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   knowledgeItems?: Prisma.KnowledgeItemVersionSectionUncheckedUpdateManyWithoutSectionNestedInput
@@ -1100,6 +1223,9 @@ export type KnowledgeDocumentSectionCreateWithoutReviewIssueLinksInput = {
   sortOrder?: number
   sourceSheet?: string | null
   sourceRow?: number | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   documentVersion: Prisma.KnowledgeDocumentVersionCreateNestedOneWithoutSectionsInput
@@ -1119,6 +1245,9 @@ export type KnowledgeDocumentSectionUncheckedCreateWithoutReviewIssueLinksInput 
   sortOrder?: number
   sourceSheet?: string | null
   sourceRow?: number | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   knowledgeItems?: Prisma.KnowledgeItemVersionSectionUncheckedCreateNestedManyWithoutSectionInput
@@ -1152,6 +1281,9 @@ export type KnowledgeDocumentSectionUpdateWithoutReviewIssueLinksInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   documentVersion?: Prisma.KnowledgeDocumentVersionUpdateOneRequiredWithoutSectionsNestedInput
@@ -1171,6 +1303,9 @@ export type KnowledgeDocumentSectionUncheckedUpdateWithoutReviewIssueLinksInput 
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   knowledgeItems?: Prisma.KnowledgeItemVersionSectionUncheckedUpdateManyWithoutSectionNestedInput
@@ -1188,6 +1323,9 @@ export type KnowledgeDocumentSectionCreateManyDocumentVersionInput = {
   sortOrder?: number
   sourceSheet?: string | null
   sourceRow?: number | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1201,6 +1339,9 @@ export type KnowledgeDocumentSectionUpdateWithoutDocumentVersionInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   knowledgeItems?: Prisma.KnowledgeItemVersionSectionUpdateManyWithoutSectionNestedInput
@@ -1219,6 +1360,9 @@ export type KnowledgeDocumentSectionUncheckedUpdateWithoutDocumentVersionInput =
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   knowledgeItems?: Prisma.KnowledgeItemVersionSectionUncheckedUpdateManyWithoutSectionNestedInput
@@ -1237,6 +1381,9 @@ export type KnowledgeDocumentSectionUncheckedUpdateManyWithoutDocumentVersionInp
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1318,6 +1465,9 @@ export type KnowledgeDocumentSectionSelect<ExtArgs extends runtime.Types.Extensi
   sortOrder?: boolean
   sourceSheet?: boolean
   sourceRow?: boolean
+  embeddingModel?: boolean
+  embeddingContentHash?: boolean
+  embeddedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   documentVersion?: boolean | Prisma.KnowledgeDocumentVersionDefaultArgs<ExtArgs>
@@ -1339,6 +1489,9 @@ export type KnowledgeDocumentSectionSelectCreateManyAndReturn<ExtArgs extends ru
   sortOrder?: boolean
   sourceSheet?: boolean
   sourceRow?: boolean
+  embeddingModel?: boolean
+  embeddingContentHash?: boolean
+  embeddedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   documentVersion?: boolean | Prisma.KnowledgeDocumentVersionDefaultArgs<ExtArgs>
@@ -1354,6 +1507,9 @@ export type KnowledgeDocumentSectionSelectUpdateManyAndReturn<ExtArgs extends ru
   sortOrder?: boolean
   sourceSheet?: boolean
   sourceRow?: boolean
+  embeddingModel?: boolean
+  embeddingContentHash?: boolean
+  embeddedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   documentVersion?: boolean | Prisma.KnowledgeDocumentVersionDefaultArgs<ExtArgs>
@@ -1369,11 +1525,14 @@ export type KnowledgeDocumentSectionSelectScalar = {
   sortOrder?: boolean
   sourceSheet?: boolean
   sourceRow?: boolean
+  embeddingModel?: boolean
+  embeddingContentHash?: boolean
+  embeddedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type KnowledgeDocumentSectionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "documentVersionId" | "sectionCode" | "sectionTitle" | "content" | "keywords" | "sortOrder" | "sourceSheet" | "sourceRow" | "createdAt" | "updatedAt", ExtArgs["result"]["knowledgeDocumentSection"]>
+export type KnowledgeDocumentSectionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "documentVersionId" | "sectionCode" | "sectionTitle" | "content" | "keywords" | "sortOrder" | "sourceSheet" | "sourceRow" | "embeddingModel" | "embeddingContentHash" | "embeddedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["knowledgeDocumentSection"]>
 export type KnowledgeDocumentSectionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   documentVersion?: boolean | Prisma.KnowledgeDocumentVersionDefaultArgs<ExtArgs>
   knowledgeItems?: boolean | Prisma.KnowledgeDocumentSection$knowledgeItemsArgs<ExtArgs>
@@ -1410,6 +1569,9 @@ export type $KnowledgeDocumentSectionPayload<ExtArgs extends runtime.Types.Exten
     sortOrder: number
     sourceSheet: string | null
     sourceRow: number | null
+    embeddingModel: string | null
+    embeddingContentHash: string | null
+    embeddedAt: Date | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["knowledgeDocumentSection"]>
@@ -1850,6 +2012,9 @@ export interface KnowledgeDocumentSectionFieldRefs {
   readonly sortOrder: Prisma.FieldRef<"KnowledgeDocumentSection", 'Int'>
   readonly sourceSheet: Prisma.FieldRef<"KnowledgeDocumentSection", 'String'>
   readonly sourceRow: Prisma.FieldRef<"KnowledgeDocumentSection", 'Int'>
+  readonly embeddingModel: Prisma.FieldRef<"KnowledgeDocumentSection", 'String'>
+  readonly embeddingContentHash: Prisma.FieldRef<"KnowledgeDocumentSection", 'String'>
+  readonly embeddedAt: Prisma.FieldRef<"KnowledgeDocumentSection", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"KnowledgeDocumentSection", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"KnowledgeDocumentSection", 'DateTime'>
 }

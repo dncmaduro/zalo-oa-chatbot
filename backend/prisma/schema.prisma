@@ -246,6 +246,10 @@ model KnowledgeItemVersion {
   failureResponseTemplate String?                @map("failure_response_template") @db.Text
   acknowledgementMessage  String?                @map("acknowledgement_message") @db.Text
   humanContactMessage     String?                @map("human_contact_message") @db.Text
+  embedding               Unsupported("vector")?
+  embeddingModel          String?                @map("embedding_model")
+  embeddingContentHash    String?                @map("embedding_content_hash")
+  embeddedAt              DateTime?              @map("embedded_at") @db.Timestamptz(3)
   status                  KnowledgeVersionStatus @default(DRAFT)
   sourceSheet             String?                @map("source_sheet")
   sourceRow               Int?                   @map("source_row")
@@ -323,17 +327,21 @@ model KnowledgeDocumentVersion {
 }
 
 model KnowledgeDocumentSection {
-  id                String   @id @default(uuid()) @db.Uuid
-  documentVersionId String   @map("document_version_id") @db.Uuid
-  sectionCode       String   @map("section_code")
-  sectionTitle      String   @map("section_title")
-  content           String   @db.Text
-  keywords          String[] @default([])
-  sortOrder         Int      @default(0) @map("sort_order")
-  sourceSheet       String?  @map("source_sheet")
-  sourceRow         Int?     @map("source_row")
-  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id                   String                 @id @default(uuid()) @db.Uuid
+  documentVersionId    String                 @map("document_version_id") @db.Uuid
+  sectionCode          String                 @map("section_code")
+  sectionTitle         String                 @map("section_title")
+  content              String                 @db.Text
+  keywords             String[]               @default([])
+  sortOrder            Int                    @default(0) @map("sort_order")
+  sourceSheet          String?                @map("source_sheet")
+  sourceRow            Int?                   @map("source_row")
+  embedding            Unsupported("vector")?
+  embeddingModel       String?                @map("embedding_model")
+  embeddingContentHash String?                @map("embedding_content_hash")
+  embeddedAt           DateTime?              @map("embedded_at") @db.Timestamptz(3)
+  createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   documentVersion  KnowledgeDocumentVersion      @relation(fields: [documentVersionId], references: [id], onDelete: Cascade)
   knowledgeItems   KnowledgeItemVersionSection[]

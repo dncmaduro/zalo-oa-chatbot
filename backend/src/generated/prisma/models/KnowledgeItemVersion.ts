@@ -53,6 +53,9 @@ export type KnowledgeItemVersionMinAggregateOutputType = {
   failureResponseTemplate: string | null
   acknowledgementMessage: string | null
   humanContactMessage: string | null
+  embeddingModel: string | null
+  embeddingContentHash: string | null
+  embeddedAt: Date | null
   status: $Enums.KnowledgeVersionStatus | null
   sourceSheet: string | null
   sourceRow: number | null
@@ -79,6 +82,9 @@ export type KnowledgeItemVersionMaxAggregateOutputType = {
   failureResponseTemplate: string | null
   acknowledgementMessage: string | null
   humanContactMessage: string | null
+  embeddingModel: string | null
+  embeddingContentHash: string | null
+  embeddedAt: Date | null
   status: $Enums.KnowledgeVersionStatus | null
   sourceSheet: string | null
   sourceRow: number | null
@@ -109,6 +115,9 @@ export type KnowledgeItemVersionCountAggregateOutputType = {
   failureResponseTemplate: number
   acknowledgementMessage: number
   humanContactMessage: number
+  embeddingModel: number
+  embeddingContentHash: number
+  embeddedAt: number
   status: number
   sourceSheet: number
   sourceRow: number
@@ -147,6 +156,9 @@ export type KnowledgeItemVersionMinAggregateInputType = {
   failureResponseTemplate?: true
   acknowledgementMessage?: true
   humanContactMessage?: true
+  embeddingModel?: true
+  embeddingContentHash?: true
+  embeddedAt?: true
   status?: true
   sourceSheet?: true
   sourceRow?: true
@@ -173,6 +185,9 @@ export type KnowledgeItemVersionMaxAggregateInputType = {
   failureResponseTemplate?: true
   acknowledgementMessage?: true
   humanContactMessage?: true
+  embeddingModel?: true
+  embeddingContentHash?: true
+  embeddedAt?: true
   status?: true
   sourceSheet?: true
   sourceRow?: true
@@ -203,6 +218,9 @@ export type KnowledgeItemVersionCountAggregateInputType = {
   failureResponseTemplate?: true
   acknowledgementMessage?: true
   humanContactMessage?: true
+  embeddingModel?: true
+  embeddingContentHash?: true
+  embeddedAt?: true
   status?: true
   sourceSheet?: true
   sourceRow?: true
@@ -320,6 +338,9 @@ export type KnowledgeItemVersionGroupByOutputType = {
   failureResponseTemplate: string | null
   acknowledgementMessage: string | null
   humanContactMessage: string | null
+  embeddingModel: string | null
+  embeddingContentHash: string | null
+  embeddedAt: Date | null
   status: $Enums.KnowledgeVersionStatus
   sourceSheet: string | null
   sourceRow: number | null
@@ -373,6 +394,9 @@ export type KnowledgeItemVersionWhereInput = {
   failureResponseTemplate?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
   acknowledgementMessage?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
   humanContactMessage?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
+  embeddingModel?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
+  embeddingContentHash?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
+  embeddedAt?: Prisma.DateTimeNullableFilter<"KnowledgeItemVersion"> | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFilter<"KnowledgeItemVersion"> | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
   sourceRow?: Prisma.IntNullableFilter<"KnowledgeItemVersion"> | number | null
@@ -413,6 +437,9 @@ export type KnowledgeItemVersionOrderByWithRelationInput = {
   failureResponseTemplate?: Prisma.SortOrderInput | Prisma.SortOrder
   acknowledgementMessage?: Prisma.SortOrderInput | Prisma.SortOrder
   humanContactMessage?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddingModel?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddingContentHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   sourceSheet?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceRow?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -457,6 +484,9 @@ export type KnowledgeItemVersionWhereUniqueInput = Prisma.AtLeast<{
   failureResponseTemplate?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
   acknowledgementMessage?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
   humanContactMessage?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
+  embeddingModel?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
+  embeddingContentHash?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
+  embeddedAt?: Prisma.DateTimeNullableFilter<"KnowledgeItemVersion"> | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFilter<"KnowledgeItemVersion"> | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
   sourceRow?: Prisma.IntNullableFilter<"KnowledgeItemVersion"> | number | null
@@ -497,6 +527,9 @@ export type KnowledgeItemVersionOrderByWithAggregationInput = {
   failureResponseTemplate?: Prisma.SortOrderInput | Prisma.SortOrder
   acknowledgementMessage?: Prisma.SortOrderInput | Prisma.SortOrder
   humanContactMessage?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddingModel?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddingContentHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   sourceSheet?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceRow?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -535,6 +568,9 @@ export type KnowledgeItemVersionScalarWhereWithAggregatesInput = {
   failureResponseTemplate?: Prisma.StringNullableWithAggregatesFilter<"KnowledgeItemVersion"> | string | null
   acknowledgementMessage?: Prisma.StringNullableWithAggregatesFilter<"KnowledgeItemVersion"> | string | null
   humanContactMessage?: Prisma.StringNullableWithAggregatesFilter<"KnowledgeItemVersion"> | string | null
+  embeddingModel?: Prisma.StringNullableWithAggregatesFilter<"KnowledgeItemVersion"> | string | null
+  embeddingContentHash?: Prisma.StringNullableWithAggregatesFilter<"KnowledgeItemVersion"> | string | null
+  embeddedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"KnowledgeItemVersion"> | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusWithAggregatesFilter<"KnowledgeItemVersion"> | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.StringNullableWithAggregatesFilter<"KnowledgeItemVersion"> | string | null
   sourceRow?: Prisma.IntNullableWithAggregatesFilter<"KnowledgeItemVersion"> | number | null
@@ -564,6 +600,9 @@ export type KnowledgeItemVersionCreateInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -604,6 +643,9 @@ export type KnowledgeItemVersionUncheckedCreateInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -642,6 +684,9 @@ export type KnowledgeItemVersionUpdateInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -682,6 +727,9 @@ export type KnowledgeItemVersionUncheckedUpdateInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -721,6 +769,9 @@ export type KnowledgeItemVersionCreateManyInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -750,6 +801,9 @@ export type KnowledgeItemVersionUpdateManyMutationInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -780,6 +834,9 @@ export type KnowledgeItemVersionUncheckedUpdateManyInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -838,6 +895,9 @@ export type KnowledgeItemVersionCountOrderByAggregateInput = {
   failureResponseTemplate?: Prisma.SortOrder
   acknowledgementMessage?: Prisma.SortOrder
   humanContactMessage?: Prisma.SortOrder
+  embeddingModel?: Prisma.SortOrder
+  embeddingContentHash?: Prisma.SortOrder
+  embeddedAt?: Prisma.SortOrder
   status?: Prisma.SortOrder
   sourceSheet?: Prisma.SortOrder
   sourceRow?: Prisma.SortOrder
@@ -869,6 +929,9 @@ export type KnowledgeItemVersionMaxOrderByAggregateInput = {
   failureResponseTemplate?: Prisma.SortOrder
   acknowledgementMessage?: Prisma.SortOrder
   humanContactMessage?: Prisma.SortOrder
+  embeddingModel?: Prisma.SortOrder
+  embeddingContentHash?: Prisma.SortOrder
+  embeddedAt?: Prisma.SortOrder
   status?: Prisma.SortOrder
   sourceSheet?: Prisma.SortOrder
   sourceRow?: Prisma.SortOrder
@@ -895,6 +958,9 @@ export type KnowledgeItemVersionMinOrderByAggregateInput = {
   failureResponseTemplate?: Prisma.SortOrder
   acknowledgementMessage?: Prisma.SortOrder
   humanContactMessage?: Prisma.SortOrder
+  embeddingModel?: Prisma.SortOrder
+  embeddingContentHash?: Prisma.SortOrder
+  embeddedAt?: Prisma.SortOrder
   status?: Prisma.SortOrder
   sourceSheet?: Prisma.SortOrder
   sourceRow?: Prisma.SortOrder
@@ -1015,6 +1081,10 @@ export type KnowledgeItemVersionUpdatekeywordsInput = {
   push?: string | string[]
 }
 
+export type NullableDateTimeFieldUpdateOperationsInput = {
+  set?: Date | string | null
+}
+
 export type EnumKnowledgeVersionStatusFieldUpdateOperationsInput = {
   set?: $Enums.KnowledgeVersionStatus
 }
@@ -1025,10 +1095,6 @@ export type NullableIntFieldUpdateOperationsInput = {
   decrement?: number
   multiply?: number
   divide?: number
-}
-
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
 }
 
 export type KnowledgeItemVersionCreateNestedOneWithoutDocumentSectionsInput = {
@@ -1169,6 +1235,9 @@ export type KnowledgeItemVersionCreateWithoutKnowledgeItemInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -1207,6 +1276,9 @@ export type KnowledgeItemVersionUncheckedCreateWithoutKnowledgeItemInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -1255,6 +1327,9 @@ export type KnowledgeItemVersionCreateWithoutCurrentPublishedForInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -1294,6 +1369,9 @@ export type KnowledgeItemVersionUncheckedCreateWithoutCurrentPublishedForInput =
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -1356,6 +1434,9 @@ export type KnowledgeItemVersionScalarWhereInput = {
   failureResponseTemplate?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
   acknowledgementMessage?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
   humanContactMessage?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
+  embeddingModel?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
+  embeddingContentHash?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
+  embeddedAt?: Prisma.DateTimeNullableFilter<"KnowledgeItemVersion"> | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFilter<"KnowledgeItemVersion"> | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.StringNullableFilter<"KnowledgeItemVersion"> | string | null
   sourceRow?: Prisma.IntNullableFilter<"KnowledgeItemVersion"> | number | null
@@ -1396,6 +1477,9 @@ export type KnowledgeItemVersionUpdateWithoutCurrentPublishedForInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1435,6 +1519,9 @@ export type KnowledgeItemVersionUncheckedUpdateWithoutCurrentPublishedForInput =
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1472,6 +1559,9 @@ export type KnowledgeItemVersionCreateWithoutDocumentSectionsInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -1511,6 +1601,9 @@ export type KnowledgeItemVersionUncheckedCreateWithoutDocumentSectionsInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -1564,6 +1657,9 @@ export type KnowledgeItemVersionUpdateWithoutDocumentSectionsInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1603,6 +1699,9 @@ export type KnowledgeItemVersionUncheckedUpdateWithoutDocumentSectionsInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1640,6 +1739,9 @@ export type KnowledgeItemVersionCreateWithoutMediaInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -1679,6 +1781,9 @@ export type KnowledgeItemVersionUncheckedCreateWithoutMediaInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -1732,6 +1837,9 @@ export type KnowledgeItemVersionUpdateWithoutMediaInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1771,6 +1879,9 @@ export type KnowledgeItemVersionUncheckedUpdateWithoutMediaInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1808,6 +1919,9 @@ export type KnowledgeItemVersionCreateWithoutSourcesInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -1847,6 +1961,9 @@ export type KnowledgeItemVersionUncheckedCreateWithoutSourcesInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -1900,6 +2017,9 @@ export type KnowledgeItemVersionUpdateWithoutSourcesInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1939,6 +2059,9 @@ export type KnowledgeItemVersionUncheckedUpdateWithoutSourcesInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1976,6 +2099,9 @@ export type KnowledgeItemVersionCreateWithoutResolutionsInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -2015,6 +2141,9 @@ export type KnowledgeItemVersionUncheckedCreateWithoutResolutionsInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -2068,6 +2197,9 @@ export type KnowledgeItemVersionUpdateWithoutResolutionsInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2107,6 +2239,9 @@ export type KnowledgeItemVersionUncheckedUpdateWithoutResolutionsInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2144,6 +2279,9 @@ export type KnowledgeItemVersionCreateWithoutMessageRefsInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -2183,6 +2321,9 @@ export type KnowledgeItemVersionUncheckedCreateWithoutMessageRefsInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -2236,6 +2377,9 @@ export type KnowledgeItemVersionUpdateWithoutMessageRefsInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2275,6 +2419,9 @@ export type KnowledgeItemVersionUncheckedUpdateWithoutMessageRefsInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2312,6 +2459,9 @@ export type KnowledgeItemVersionCreateWithoutOperatorTasksInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -2351,6 +2501,9 @@ export type KnowledgeItemVersionUncheckedCreateWithoutOperatorTasksInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -2404,6 +2557,9 @@ export type KnowledgeItemVersionUpdateWithoutOperatorTasksInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2443,6 +2599,9 @@ export type KnowledgeItemVersionUncheckedUpdateWithoutOperatorTasksInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2480,6 +2639,9 @@ export type KnowledgeItemVersionCreateWithoutHumanContactRequestsInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -2519,6 +2681,9 @@ export type KnowledgeItemVersionUncheckedCreateWithoutHumanContactRequestsInput 
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -2572,6 +2737,9 @@ export type KnowledgeItemVersionUpdateWithoutHumanContactRequestsInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2611,6 +2779,9 @@ export type KnowledgeItemVersionUncheckedUpdateWithoutHumanContactRequestsInput 
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2648,6 +2819,9 @@ export type KnowledgeItemVersionCreateWithoutReviewIssueLinksInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -2687,6 +2861,9 @@ export type KnowledgeItemVersionUncheckedCreateWithoutReviewIssueLinksInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -2740,6 +2917,9 @@ export type KnowledgeItemVersionUpdateWithoutReviewIssueLinksInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2779,6 +2959,9 @@ export type KnowledgeItemVersionUncheckedUpdateWithoutReviewIssueLinksInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2816,6 +2999,9 @@ export type KnowledgeItemVersionCreateManyKnowledgeItemInput = {
   failureResponseTemplate?: string | null
   acknowledgementMessage?: string | null
   humanContactMessage?: string | null
+  embeddingModel?: string | null
+  embeddingContentHash?: string | null
+  embeddedAt?: Date | string | null
   status?: $Enums.KnowledgeVersionStatus
   sourceSheet?: string | null
   sourceRow?: number | null
@@ -2845,6 +3031,9 @@ export type KnowledgeItemVersionUpdateWithoutKnowledgeItemInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2883,6 +3072,9 @@ export type KnowledgeItemVersionUncheckedUpdateWithoutKnowledgeItemInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2921,6 +3113,9 @@ export type KnowledgeItemVersionUncheckedUpdateManyWithoutKnowledgeItemInput = {
   failureResponseTemplate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   acknowledgementMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   humanContactMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumKnowledgeVersionStatusFieldUpdateOperationsInput | $Enums.KnowledgeVersionStatus
   sourceSheet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -3045,6 +3240,9 @@ export type KnowledgeItemVersionSelect<ExtArgs extends runtime.Types.Extensions.
   failureResponseTemplate?: boolean
   acknowledgementMessage?: boolean
   humanContactMessage?: boolean
+  embeddingModel?: boolean
+  embeddingContentHash?: boolean
+  embeddedAt?: boolean
   status?: boolean
   sourceSheet?: boolean
   sourceRow?: boolean
@@ -3086,6 +3284,9 @@ export type KnowledgeItemVersionSelectCreateManyAndReturn<ExtArgs extends runtim
   failureResponseTemplate?: boolean
   acknowledgementMessage?: boolean
   humanContactMessage?: boolean
+  embeddingModel?: boolean
+  embeddingContentHash?: boolean
+  embeddedAt?: boolean
   status?: boolean
   sourceSheet?: boolean
   sourceRow?: boolean
@@ -3117,6 +3318,9 @@ export type KnowledgeItemVersionSelectUpdateManyAndReturn<ExtArgs extends runtim
   failureResponseTemplate?: boolean
   acknowledgementMessage?: boolean
   humanContactMessage?: boolean
+  embeddingModel?: boolean
+  embeddingContentHash?: boolean
+  embeddedAt?: boolean
   status?: boolean
   sourceSheet?: boolean
   sourceRow?: boolean
@@ -3148,6 +3352,9 @@ export type KnowledgeItemVersionSelectScalar = {
   failureResponseTemplate?: boolean
   acknowledgementMessage?: boolean
   humanContactMessage?: boolean
+  embeddingModel?: boolean
+  embeddingContentHash?: boolean
+  embeddedAt?: boolean
   status?: boolean
   sourceSheet?: boolean
   sourceRow?: boolean
@@ -3157,7 +3364,7 @@ export type KnowledgeItemVersionSelectScalar = {
   archivedAt?: boolean
 }
 
-export type KnowledgeItemVersionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "knowledgeItemId" | "versionNumber" | "title" | "category" | "subCategory" | "audience" | "resolutionType" | "userScenarios" | "exampleQuestions" | "keywords" | "knowledgeContent" | "initialResponse" | "requiredFields" | "operatorTaskType" | "operatorInstruction" | "successResponseTemplate" | "failureResponseTemplate" | "acknowledgementMessage" | "humanContactMessage" | "status" | "sourceSheet" | "sourceRow" | "createdAt" | "updatedAt" | "publishedAt" | "archivedAt", ExtArgs["result"]["knowledgeItemVersion"]>
+export type KnowledgeItemVersionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "knowledgeItemId" | "versionNumber" | "title" | "category" | "subCategory" | "audience" | "resolutionType" | "userScenarios" | "exampleQuestions" | "keywords" | "knowledgeContent" | "initialResponse" | "requiredFields" | "operatorTaskType" | "operatorInstruction" | "successResponseTemplate" | "failureResponseTemplate" | "acknowledgementMessage" | "humanContactMessage" | "embeddingModel" | "embeddingContentHash" | "embeddedAt" | "status" | "sourceSheet" | "sourceRow" | "createdAt" | "updatedAt" | "publishedAt" | "archivedAt", ExtArgs["result"]["knowledgeItemVersion"]>
 export type KnowledgeItemVersionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   knowledgeItem?: boolean | Prisma.KnowledgeItemDefaultArgs<ExtArgs>
   currentPublishedFor?: boolean | Prisma.KnowledgeItemVersion$currentPublishedForArgs<ExtArgs>
@@ -3213,6 +3420,9 @@ export type $KnowledgeItemVersionPayload<ExtArgs extends runtime.Types.Extension
     failureResponseTemplate: string | null
     acknowledgementMessage: string | null
     humanContactMessage: string | null
+    embeddingModel: string | null
+    embeddingContentHash: string | null
+    embeddedAt: Date | null
     status: $Enums.KnowledgeVersionStatus
     sourceSheet: string | null
     sourceRow: number | null
@@ -3673,6 +3883,9 @@ export interface KnowledgeItemVersionFieldRefs {
   readonly failureResponseTemplate: Prisma.FieldRef<"KnowledgeItemVersion", 'String'>
   readonly acknowledgementMessage: Prisma.FieldRef<"KnowledgeItemVersion", 'String'>
   readonly humanContactMessage: Prisma.FieldRef<"KnowledgeItemVersion", 'String'>
+  readonly embeddingModel: Prisma.FieldRef<"KnowledgeItemVersion", 'String'>
+  readonly embeddingContentHash: Prisma.FieldRef<"KnowledgeItemVersion", 'String'>
+  readonly embeddedAt: Prisma.FieldRef<"KnowledgeItemVersion", 'DateTime'>
   readonly status: Prisma.FieldRef<"KnowledgeItemVersion", 'KnowledgeVersionStatus'>
   readonly sourceSheet: Prisma.FieldRef<"KnowledgeItemVersion", 'String'>
   readonly sourceRow: Prisma.FieldRef<"KnowledgeItemVersion", 'Int'>
