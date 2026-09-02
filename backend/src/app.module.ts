@@ -5,9 +5,10 @@ import { PrismaModule } from './prisma/primsa.module';
 import { MediaStorageModule } from './media-storage/media-storage.module';
 import { KnowledgeImportModule } from './modules/knowledge-import/knowledge-import.module';
 import { KnowledgeModule } from './modules/knowledge/knowledge.module';
+import { EmbeddingModule } from './modules/embedding/embedding.module';
 
 @Module({
-  imports: [PrismaModule, MediaStorageModule, KnowledgeImportModule, KnowledgeModule],
+  imports: [PrismaModule, MediaStorageModule, KnowledgeImportModule, KnowledgeModule, EmbeddingModule],
   controllers: [AppController],
   providers: [AppService],
 })
