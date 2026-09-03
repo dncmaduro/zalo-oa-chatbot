@@ -11,4 +11,9 @@ export class KnowledgeController {
   search(@Body() input: SearchKnowledgeDto) {
     return this.knowledgeService.search(input);
   }
+
+  @Post('search/semantic')
+  searchSemantic(@Body() input: SearchKnowledgeDto) {
+    return this.knowledgeService.searchSemantic(input);
+  }
 }
