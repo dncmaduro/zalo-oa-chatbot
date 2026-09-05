@@ -10,6 +10,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { OperatorTaskModule } from './modules/operator-tasks/operator-task.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { OperatorModule } from './modules/operators/operator.module';
+import { HumanContactModule } from './modules/human-contacts/human-contact.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { OperatorModule } from './modules/operators/operator.module';
     OperatorTaskModule,
     AuthModule,
     OperatorModule,
+    HumanContactModule,
   ],
   controllers: [AppController],
   providers: [AppService],
