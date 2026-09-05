@@ -1,7 +1,7 @@
 import 'dotenv/config';
-import { scryptSync } from 'node:crypto';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { OperatorStatus, PrismaClient, OperatorRoleCode } from '../src/generated/prisma/client';
+import { hashPassword } from '../src/modules/auth/password-hash';
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL!,
@@ -11,13 +11,8 @@ const prisma = new PrismaClient({ adapter });
 
 const DEV_OPERATOR_EMAIL = 'operator.dev@local.test';
 const DEV_OPERATOR_PASSWORD = 'dev-operator-password';
-const DEV_OPERATOR_PASSWORD_SALT = 'zalo-oa-chatbot:operator.dev@local.test:v1';
-
-function hashDevelopmentPassword(password: string): string {
-  const derivedKey = scryptSync(password, DEV_OPERATOR_PASSWORD_SALT, 64);
-
-  return `scrypt$${DEV_OPERATOR_PASSWORD_SALT}$${derivedKey.toString('hex')}`;
-}
+const DEV_ADMIN_EMAIL = 'admin.dev@local.test';
+const DEV_ADMIN_PASSWORD = 'dev-admin-password';
 
 const permissions = [
   // Knowledge
@@ -177,24 +172,44 @@ async function main() {
     throw new Error('OPERATOR role is required before seeding the development operator.');
   }
 
+  const developmentPasswordHash = await hashPassword(DEV_OPERATOR_PASSWORD);
+  const developmentAdminPasswordHash = await hashPassword(DEV_ADMIN_PASSWORD);
+
   await prisma.operator.upsert({
     where: { email: DEV_OPERATOR_EMAIL },
     update: {
       roleId: operatorRole.id,
       fullName: 'Dev Operator',
       status: OperatorStatus.ACTIVE,
-      passwordHash: hashDevelopmentPassword(DEV_OPERATOR_PASSWORD),
+      passwordHash: developmentPasswordHash,
     },
     create: {
       email: DEV_OPERATOR_EMAIL,
       fullName: 'Dev Operator',
       roleId: operatorRole.id,
       status: OperatorStatus.ACTIVE,
-      passwordHash: hashDevelopmentPassword(DEV_OPERATOR_PASSWORD),
+      passwordHash: developmentPasswordHash,
     },
   });
 
-  console.log('RBAC and development operator seed completed');
+  await prisma.operator.upsert({
+    where: { email: DEV_ADMIN_EMAIL },
+    update: {
+      roleId: admin.id,
+      fullName: 'Dev Admin',
+      status: OperatorStatus.ACTIVE,
+      passwordHash: developmentAdminPasswordHash,
+    },
+    create: {
+      email: DEV_ADMIN_EMAIL,
+      fullName: 'Dev Admin',
+      roleId: admin.id,
+      status: OperatorStatus.ACTIVE,
+      passwordHash: developmentAdminPasswordHash,
+    },
+  });
+
+  console.log('RBAC and development operator/admin seed completed');
 }
 
 main()

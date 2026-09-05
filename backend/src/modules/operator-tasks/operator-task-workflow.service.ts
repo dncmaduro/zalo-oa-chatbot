@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 
 import {
   MessageDirection,
@@ -9,6 +9,7 @@ import {
 } from '../../generated/prisma/client';
 import { LlmService } from '../llm/llm.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AuthenticatedOperator } from '../auth/auth.types';
 
 import { OperatorTaskListQuery } from './dto/operator-task.dto';
 
@@ -28,11 +29,15 @@ export class OperatorTaskWorkflowService {
     private readonly llmService: LlmService,
   ) {}
 
-  async list(query: OperatorTaskListQuery) {
+  async list(query: OperatorTaskListQuery, actor: AuthenticatedOperator) {
     const tasks = await this.prisma.operatorTask.findMany({
       where: {
         ...(query.status ? { status: query.status } : {}),
-        ...(query.assignee ? { currentAssigneeId: query.assignee } : {}),
+        ...(this.canManageTasks(actor)
+          ? query.assignee
+            ? { currentAssigneeId: query.assignee }
+            : {}
+          : { currentAssigneeId: actor.id }),
         ...(query.operatorTaskType ? { taskType: query.operatorTaskType } : {}),
         ...(query.conversationId ? { conversationId: query.conversationId } : {}),
       },
@@ -43,18 +48,19 @@ export class OperatorTaskWorkflowService {
     return tasks.map((task) => this.toTaskListItem(task));
   }
 
-  async detail(taskId: string) {
+  async detail(taskId: string, actor: AuthenticatedOperator) {
     const task = await this.prisma.operatorTask.findUnique({
       where: { id: taskId },
       include: this.taskDetailInclude(),
     });
 
     if (!task) throw new NotFoundException('Operator task was not found');
+    this.assertTaskVisibility(task, actor);
 
     return this.toTaskDetail(task);
   }
 
-  async assign(taskId: string, operatorId: string) {
+  async assign(taskId: string, operatorId: string, actor: AuthenticatedOperator) {
     return this.prisma.$transaction(async (transaction) => {
       const [task, operator] = await Promise.all([
         transaction.operatorTask.findUnique({ where: { id: taskId } }),
@@ -78,14 +84,14 @@ export class OperatorTaskWorkflowService {
           data: { endedAt: new Date() },
         });
       }
-      await transaction.operatorTaskAssignment.create({ data: { taskId, operatorId } });
+      await transaction.operatorTaskAssignment.create({ data: { taskId, operatorId, assignedByOperatorId: actor.id } });
       const updatedTask = await transaction.operatorTask.update({
         where: { id: taskId },
         data: { currentAssigneeId: operatorId, status: OperatorTaskStatus.ASSIGNED, assignedAt: new Date() },
       });
       await this.createEvent(transaction, {
         taskId,
-        operatorId,
+        operatorId: actor.id,
         action: task.currentAssigneeId ? 'REASSIGNED' : 'ASSIGNED',
         fromStatus: task.status,
         toStatus: OperatorTaskStatus.ASSIGNED,
@@ -95,11 +101,12 @@ export class OperatorTaskWorkflowService {
     });
   }
 
-  async start(taskId: string) {
+  async start(taskId: string, actor: AuthenticatedOperator) {
     return this.prisma.$transaction(async (transaction) => {
       const task = await transaction.operatorTask.findUnique({ where: { id: taskId } });
       if (!task) throw new NotFoundException('Operator task was not found');
       if (!task.currentAssigneeId) throw new ConflictException('Task must be assigned before it can start');
+      this.assertTaskActor(task, actor);
       this.assertTransition(task.status, OperatorTaskStatus.IN_PROGRESS);
 
       const updatedTask = await transaction.operatorTask.update({
@@ -108,7 +115,7 @@ export class OperatorTaskWorkflowService {
       });
       await this.createEvent(transaction, {
         taskId,
-        operatorId: task.currentAssigneeId,
+        operatorId: actor.id,
         action: 'STARTED',
         fromStatus: task.status,
         toStatus: OperatorTaskStatus.IN_PROGRESS,
@@ -117,10 +124,11 @@ export class OperatorTaskWorkflowService {
     });
   }
 
-  async submitResult(taskId: string, input: { result: string; outcome: string | null }) {
+  async submitResult(taskId: string, input: { result: string; outcome: string | null }, actor: AuthenticatedOperator) {
     return this.prisma.$transaction(async (transaction) => {
       const task = await transaction.operatorTask.findUnique({ where: { id: taskId } });
       if (!task) throw new NotFoundException('Operator task was not found');
+      this.assertTaskActor(task, actor);
       this.assertStatus(task.status, OperatorTaskStatus.IN_PROGRESS, 'submit an operational result');
 
       const updatedTask = await transaction.operatorTask.update({
@@ -136,7 +144,7 @@ export class OperatorTaskWorkflowService {
       });
       await this.createEvent(transaction, {
         taskId,
-        operatorId: task.currentAssigneeId,
+        operatorId: actor.id,
         action: 'RESULT_SUBMITTED',
         fromStatus: task.status,
         toStatus: task.status,
@@ -145,7 +153,7 @@ export class OperatorTaskWorkflowService {
     });
   }
 
-  async generateResponse(taskId: string) {
+  async generateResponse(taskId: string, actor: AuthenticatedOperator) {
     const task = await this.prisma.operatorTask.findUnique({
       where: { id: taskId },
       include: {
@@ -155,6 +163,7 @@ export class OperatorTaskWorkflowService {
       },
     });
     if (!task) throw new NotFoundException('Operator task was not found');
+    this.assertTaskActor(task, actor);
     this.assertStatus(task.status, OperatorTaskStatus.IN_PROGRESS, 'generate a response draft');
     if (!task.resultSummary) throw new ConflictException('An operator result is required before generating a response');
 
@@ -170,6 +179,7 @@ export class OperatorTaskWorkflowService {
     return this.prisma.$transaction(async (transaction) => {
       const currentTask = await transaction.operatorTask.findUnique({ where: { id: taskId } });
       if (!currentTask) throw new NotFoundException('Operator task was not found');
+      this.assertTaskActor(currentTask, actor);
       this.assertStatus(currentTask.status, OperatorTaskStatus.IN_PROGRESS, 'save a response draft');
       if (currentTask.resultSummary !== task.resultSummary) {
         throw new ConflictException('The operator result changed; generate a new draft from the current result');
@@ -180,7 +190,7 @@ export class OperatorTaskWorkflowService {
       });
       await this.createEvent(transaction, {
         taskId,
-        operatorId: currentTask.currentAssigneeId,
+        operatorId: actor.id,
         action: 'DRAFT_GENERATED',
         fromStatus: currentTask.status,
         toStatus: currentTask.status,
@@ -189,10 +199,11 @@ export class OperatorTaskWorkflowService {
     });
   }
 
-  async editDraft(taskId: string, draftResponse: string) {
+  async editDraft(taskId: string, draftResponse: string, actor: AuthenticatedOperator) {
     return this.prisma.$transaction(async (transaction) => {
       const task = await transaction.operatorTask.findUnique({ where: { id: taskId } });
       if (!task) throw new NotFoundException('Operator task was not found');
+      this.assertTaskActor(task, actor);
       this.assertStatus(task.status, OperatorTaskStatus.IN_PROGRESS, 'edit a response draft');
       const response = await transaction.operatorTaskResponse.findFirst({
         where: { taskId, status: { in: [TaskResponseStatus.GENERATED, TaskResponseStatus.EDITED] } },
@@ -206,7 +217,7 @@ export class OperatorTaskWorkflowService {
       });
       await this.createEvent(transaction, {
         taskId,
-        operatorId: task.currentAssigneeId,
+        operatorId: actor.id,
         action: 'DRAFT_EDITED',
         fromStatus: task.status,
         toStatus: task.status,
@@ -215,13 +226,14 @@ export class OperatorTaskWorkflowService {
     });
   }
 
-  async approve(taskId: string, operatorId: string) {
+  async approve(taskId: string, actor: AuthenticatedOperator) {
     return this.prisma.$transaction(async (transaction) => {
       const [task, approver] = await Promise.all([
         transaction.operatorTask.findUnique({ where: { id: taskId } }),
-        transaction.operator.findUnique({ where: { id: operatorId } }),
+        transaction.operator.findUnique({ where: { id: actor.id } }),
       ]);
       if (!task) throw new NotFoundException('Operator task was not found');
+      this.assertTaskActor(task, actor);
       if (!approver) throw new NotFoundException('Operator was not found');
       if (approver.status !== OperatorStatus.ACTIVE) throw new ConflictException('Operator is not active');
       this.assertTransition(task.status, OperatorTaskStatus.COMPLETED);
@@ -264,14 +276,14 @@ export class OperatorTaskWorkflowService {
         data: {
           finalText,
           status: TaskResponseStatus.APPROVED,
-          approvedByOperatorId: operatorId,
+          approvedByOperatorId: actor.id,
           approvedAt: new Date(),
           sentMessageId: outboundMessage.id,
         },
       });
       await this.createEvent(transaction, {
         taskId,
-        operatorId,
+        operatorId: actor.id,
         action: 'COMPLETED',
         fromStatus: OperatorTaskStatus.IN_PROGRESS,
         toStatus: OperatorTaskStatus.COMPLETED,
@@ -414,6 +426,22 @@ export class OperatorTaskWorkflowService {
 
   private assertStatus(current: OperatorTaskStatus, expected: OperatorTaskStatus, action: string): void {
     if (current !== expected) throw new ConflictException(`Task must be ${expected} to ${action}`);
+  }
+
+  private canManageTasks(actor: AuthenticatedOperator): boolean {
+    return actor.permissions.includes('task.assign');
+  }
+
+  private assertTaskVisibility(task: { currentAssigneeId: string | null }, actor: AuthenticatedOperator): void {
+    if (task.currentAssigneeId !== actor.id && !this.canManageTasks(actor)) {
+      throw new ForbiddenException('You are not allowed to view this task');
+    }
+  }
+
+  private assertTaskActor(task: { currentAssigneeId: string | null }, actor: AuthenticatedOperator): void {
+    if (task.currentAssigneeId !== actor.id && !this.canManageTasks(actor)) {
+      throw new ForbiddenException('You are not assigned to this task');
+    }
   }
 
   private async createEvent(transaction: any, event: any): Promise<void> {

@@ -19,10 +19,6 @@ export class EditOperatorTaskDraftDto {
   draftResponse!: string;
 }
 
-export class ApproveOperatorTaskDto {
-  operatorId!: string;
-}
-
 export interface OperatorTaskListQuery {
   status?: OperatorTaskStatus;
   assignee?: string;

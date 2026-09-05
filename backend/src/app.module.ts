@@ -8,6 +8,8 @@ import { KnowledgeModule } from './modules/knowledge/knowledge.module';
 import { EmbeddingModule } from './modules/embedding/embedding.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { OperatorTaskModule } from './modules/operator-tasks/operator-task.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { OperatorModule } from './modules/operators/operator.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { OperatorTaskModule } from './modules/operator-tasks/operator-task.modul
     EmbeddingModule,
     ChatModule,
     OperatorTaskModule,
+    AuthModule,
+    OperatorModule,
   ],
   controllers: [AppController],
   providers: [AppService],

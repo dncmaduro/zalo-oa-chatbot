@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 
 import {
   ChatChannel,
@@ -37,6 +37,14 @@ const task = (overrides: Record<string, unknown> = {}) => ({
 });
 
 const activeOperator = { id: 'operator-1', status: OperatorStatus.ACTIVE, fullName: 'Nguyễn A', email: 'a@example.test' };
+const actor = {
+  id: 'operator-1',
+  email: 'a@example.test',
+  fullName: 'Nguyễn A',
+  status: OperatorStatus.ACTIVE,
+  role: { id: 'role-1', code: 'LEADER', name: 'Leader' },
+  permissions: ['task.read', 'task.assign', 'task.update', 'task.complete'],
+};
 
 const createHarness = () => {
   const transaction = {
@@ -119,10 +127,10 @@ describe('OperatorTaskWorkflowService', () => {
     prisma.operatorTask.findMany.mockResolvedValue([listedTask]);
     prisma.operatorTask.findUnique.mockResolvedValue(detailedTask);
 
-    await expect(service.list({ status: OperatorTaskStatus.PENDING })).resolves.toEqual([
+    await expect(service.list({ status: OperatorTaskStatus.PENDING }, actor)).resolves.toEqual([
       expect.objectContaining({ id: 'task-1', requiredFields: ['Mã đơn'], selectedKnowledge: { code: 'CHECK_NPP_SELECTION', title: 'Kiểm tra NPP' } }),
     ]);
-    await expect(service.detail('task-1')).resolves.toEqual(
+    await expect(service.detail('task-1', actor)).resolves.toEqual(
       expect.objectContaining({ id: 'task-1', operatorInstruction: 'Kiểm tra NPP được chọn.', messages: detailedTask.conversation.messages }),
     );
   });
@@ -130,9 +138,9 @@ describe('OperatorTaskWorkflowService', () => {
   it('assigns an active operator, updates status, and preserves assignment history', async () => {
     const { service, transaction } = createHarness();
 
-    await expect(service.assign('task-1', 'operator-1')).resolves.toMatchObject({ status: OperatorTaskStatus.ASSIGNED });
+    await expect(service.assign('task-1', 'operator-1', actor)).resolves.toMatchObject({ status: OperatorTaskStatus.ASSIGNED });
 
-    expect(transaction.operatorTaskAssignment.create).toHaveBeenCalledWith({ data: { taskId: 'task-1', operatorId: 'operator-1' } });
+    expect(transaction.operatorTaskAssignment.create).toHaveBeenCalledWith({ data: { taskId: 'task-1', operatorId: 'operator-1', assignedByOperatorId: 'operator-1' } });
     expect(transaction.operatorTask.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ currentAssigneeId: 'operator-1', status: OperatorTaskStatus.ASSIGNED }) }),
     );
@@ -141,32 +149,58 @@ describe('OperatorTaskWorkflowService', () => {
     );
   });
 
+  it('records the authenticated assignment actor separately from the target operator', async () => {
+    const { service, transaction } = createHarness();
+    transaction.operator.findUnique.mockResolvedValue({ ...activeOperator, id: 'operator-target' });
+
+    await service.assign('task-1', 'operator-target', actor);
+
+    expect(transaction.operatorTaskAssignment.create).toHaveBeenCalledWith({
+      data: { taskId: 'task-1', operatorId: 'operator-target', assignedByOperatorId: 'operator-1' },
+    });
+    expect(transaction.operatorTaskEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ operatorId: 'operator-1' }) }),
+    );
+  });
+
   it('rejects a missing or inactive assignment target', async () => {
     const { service, transaction } = createHarness();
     transaction.operator.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({ ...activeOperator, status: OperatorStatus.INACTIVE });
 
-    await expect(service.assign('task-1', 'missing')).rejects.toThrow('Operator was not found');
-    await expect(service.assign('task-1', 'inactive')).rejects.toThrow('Operator is not active');
+    await expect(service.assign('task-1', 'missing', actor)).rejects.toThrow('Operator was not found');
+    await expect(service.assign('task-1', 'inactive', actor)).rejects.toThrow('Operator is not active');
   });
 
   it('starts an assigned task and rejects an invalid start transition', async () => {
     const { service, transaction } = createHarness();
     transaction.operatorTask.findUnique.mockResolvedValueOnce(task({ status: OperatorTaskStatus.ASSIGNED, currentAssigneeId: 'operator-1' }));
 
-    await expect(service.start('task-1')).resolves.toMatchObject({ status: OperatorTaskStatus.IN_PROGRESS });
+    await expect(service.start('task-1', actor)).resolves.toMatchObject({ status: OperatorTaskStatus.IN_PROGRESS });
     expect(transaction.operatorTaskEvent.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ action: 'STARTED' }) }),
     );
 
     transaction.operatorTask.findUnique.mockResolvedValueOnce(task({ status: OperatorTaskStatus.PENDING }));
-    await expect(service.start('task-1')).rejects.toThrow(ConflictException);
+    await expect(service.start('task-1', actor)).rejects.toThrow(ConflictException);
+  });
+
+  it('lets an assigned operator start its own task but rejects an unrelated non-manager', async () => {
+    const { service, transaction } = createHarness();
+    const assignedActor = { ...actor, permissions: ['task.read', 'task.update'] };
+    transaction.operatorTask.findUnique.mockResolvedValue(task({ status: OperatorTaskStatus.ASSIGNED, currentAssigneeId: 'operator-1' }));
+
+    await expect(service.start('task-1', assignedActor)).resolves.toMatchObject({ status: OperatorTaskStatus.IN_PROGRESS });
+
+    const unrelatedActor = { ...assignedActor, id: 'operator-2' };
+    transaction.operatorTask.findUnique.mockResolvedValue(task({ status: OperatorTaskStatus.ASSIGNED, currentAssigneeId: 'operator-1' }));
+    await expect(service.start('task-1', unrelatedActor)).rejects.toThrow(ForbiddenException);
   });
 
   it('stores a trimmed operator result without generating a customer response', async () => {
     const { service, transaction, llm } = createHarness();
     transaction.operatorTask.findUnique.mockResolvedValue(task({ status: OperatorTaskStatus.IN_PROGRESS, currentAssigneeId: 'operator-1' }));
 
-    await service.submitResult('task-1', { outcome: 'SUCCESS', result: 'Đã hướng dẫn chọn lại NPP Hải Phòng.' });
+    await service.submitResult('task-1', { outcome: 'SUCCESS', result: 'Đã hướng dẫn chọn lại NPP Hải Phòng.' }, actor);
 
     expect(transaction.operatorTask.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ resultSummary: 'Đã hướng dẫn chọn lại NPP Hải Phòng.' }) }),
@@ -202,7 +236,7 @@ describe('OperatorTaskWorkflowService', () => {
       return { draftResponse: 'Đã hướng dẫn chọn lại NPP Hải Phòng.' };
     });
 
-    await expect(service.generateResponse('task-1')).resolves.toMatchObject({ id: 'response-1' });
+    await expect(service.generateResponse('task-1', actor)).resolves.toMatchObject({ id: 'response-1' });
 
     expect(events).toEqual(['llm', 'transaction']);
     expect(llm.generateStructured).toHaveBeenCalledWith(
@@ -227,7 +261,7 @@ describe('OperatorTaskWorkflowService', () => {
     prisma.operatorTask.findUnique.mockResolvedValue(resultTask);
     llm.generateStructured.mockResolvedValue({ draftResponse: 'Nội dung', status: 'COMPLETED', outcome: 'FAILURE' });
 
-    await expect(service.generateResponse('task-1')).rejects.toThrow('LLM returned an invalid response draft');
+    await expect(service.generateResponse('task-1', actor)).rejects.toThrow('LLM returned an invalid response draft');
     expect(transaction.operatorTaskResponse.create).not.toHaveBeenCalled();
     expect(transaction.operatorTask.update).not.toHaveBeenCalled();
   });
@@ -236,7 +270,7 @@ describe('OperatorTaskWorkflowService', () => {
     const { service, transaction, llm } = createHarness();
     transaction.operatorTask.findUnique.mockResolvedValue(task({ status: OperatorTaskStatus.IN_PROGRESS, currentAssigneeId: 'operator-1' }));
 
-    await expect(service.editDraft('task-1', 'Bản chỉnh sửa của operator.')).resolves.toMatchObject({ id: 'response-1' });
+    await expect(service.editDraft('task-1', 'Bản chỉnh sửa của operator.', actor)).resolves.toMatchObject({ id: 'response-1' });
 
     expect(transaction.operatorTaskResponse.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: { finalText: 'Bản chỉnh sửa của operator.', status: TaskResponseStatus.EDITED } }),
@@ -255,7 +289,7 @@ describe('OperatorTaskWorkflowService', () => {
       status: TaskResponseStatus.EDITED,
     });
 
-    await expect(service.approve('task-1', 'operator-1')).resolves.toEqual({
+    await expect(service.approve('task-1', actor)).resolves.toEqual({
       taskId: 'task-1',
       status: OperatorTaskStatus.COMPLETED,
       outboundMessageId: 'message-1',
@@ -275,7 +309,7 @@ describe('OperatorTaskWorkflowService', () => {
     const { service, transaction } = createHarness();
     transaction.operatorTask.findUnique.mockResolvedValue(task({ status: OperatorTaskStatus.COMPLETED }));
 
-    await expect(service.approve('task-1', 'operator-1')).rejects.toThrow('Invalid task transition');
+    await expect(service.approve('task-1', actor)).rejects.toThrow('Invalid task transition');
     expect(transaction.message.create).not.toHaveBeenCalled();
 
     transaction.operatorTask.findUnique.mockResolvedValue(task({ status: OperatorTaskStatus.IN_PROGRESS }));
@@ -283,7 +317,7 @@ describe('OperatorTaskWorkflowService', () => {
       id: 'response-1', aiGeneratedText: 'Nháp.', finalText: null, status: TaskResponseStatus.GENERATED,
     });
     transaction.operatorTask.updateMany.mockResolvedValue({ count: 0 });
-    await expect(service.approve('task-1', 'operator-1')).rejects.toThrow('already completed or changed');
+    await expect(service.approve('task-1', actor)).rejects.toThrow('already completed or changed');
     expect(transaction.message.create).toHaveBeenCalledTimes(1);
   });
 
@@ -297,10 +331,10 @@ describe('OperatorTaskWorkflowService', () => {
     }));
     llm.generateStructured.mockRejectedValue(new Error('provider unavailable'));
 
-    await expect(service.generateResponse('task-1')).rejects.toThrow('provider unavailable');
+    await expect(service.generateResponse('task-1', actor)).rejects.toThrow('provider unavailable');
     expect(prisma.$transaction).not.toHaveBeenCalled();
 
     transaction.operatorTask.findUnique.mockResolvedValue(task({ status: OperatorTaskStatus.COMPLETED }));
-    await expect(service.submitResult('task-1', { outcome: null, result: 'Không được lưu.' })).rejects.toThrow('Task must be IN_PROGRESS');
+    await expect(service.submitResult('task-1', { outcome: null, result: 'Không được lưu.' }, actor)).rejects.toThrow('Task must be IN_PROGRESS');
   });
 });
