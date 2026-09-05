@@ -9,7 +9,7 @@ const DEFAULT_LIMIT = 5;
 const MAX_LIMIT = 20;
 const MINIMUM_LEXICAL_SCORE = 0.15;
 
-interface KnowledgeMediaResult {
+export interface KnowledgeMediaResult {
   mediaCode: string;
   secureUrl: string;
   description: string | null;
