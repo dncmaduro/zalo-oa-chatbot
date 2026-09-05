@@ -7,9 +7,18 @@ import { KnowledgeImportModule } from './modules/knowledge-import/knowledge-impo
 import { KnowledgeModule } from './modules/knowledge/knowledge.module';
 import { EmbeddingModule } from './modules/embedding/embedding.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { OperatorTaskModule } from './modules/operator-tasks/operator-task.module';
 
 @Module({
-  imports: [PrismaModule, MediaStorageModule, KnowledgeImportModule, KnowledgeModule, EmbeddingModule, ChatModule],
+  imports: [
+    PrismaModule,
+    MediaStorageModule,
+    KnowledgeImportModule,
+    KnowledgeModule,
+    EmbeddingModule,
+    ChatModule,
+    OperatorTaskModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

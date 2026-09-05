@@ -1,12 +1,23 @@
 import 'dotenv/config';
+import { scryptSync } from 'node:crypto';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient, OperatorRoleCode } from '../src/generated/prisma/client';
+import { OperatorStatus, PrismaClient, OperatorRoleCode } from '../src/generated/prisma/client';
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL!,
 });
 
 const prisma = new PrismaClient({ adapter });
+
+const DEV_OPERATOR_EMAIL = 'operator.dev@local.test';
+const DEV_OPERATOR_PASSWORD = 'dev-operator-password';
+const DEV_OPERATOR_PASSWORD_SALT = 'zalo-oa-chatbot:operator.dev@local.test:v1';
+
+function hashDevelopmentPassword(password: string): string {
+  const derivedKey = scryptSync(password, DEV_OPERATOR_PASSWORD_SALT, 64);
+
+  return `scrypt$${DEV_OPERATOR_PASSWORD_SALT}$${derivedKey.toString('hex')}`;
+}
 
 const permissions = [
   // Knowledge
@@ -158,7 +169,32 @@ async function main() {
     }
   }
 
-  console.log('RBAC seed completed');
+  const operatorRole = await prisma.role.findUnique({
+    where: { code: OperatorRoleCode.OPERATOR },
+  });
+
+  if (!operatorRole) {
+    throw new Error('OPERATOR role is required before seeding the development operator.');
+  }
+
+  await prisma.operator.upsert({
+    where: { email: DEV_OPERATOR_EMAIL },
+    update: {
+      roleId: operatorRole.id,
+      fullName: 'Dev Operator',
+      status: OperatorStatus.ACTIVE,
+      passwordHash: hashDevelopmentPassword(DEV_OPERATOR_PASSWORD),
+    },
+    create: {
+      email: DEV_OPERATOR_EMAIL,
+      fullName: 'Dev Operator',
+      roleId: operatorRole.id,
+      status: OperatorStatus.ACTIVE,
+      passwordHash: hashDevelopmentPassword(DEV_OPERATOR_PASSWORD),
+    },
+  });
+
+  console.log('RBAC and development operator seed completed');
 }
 
 main()
