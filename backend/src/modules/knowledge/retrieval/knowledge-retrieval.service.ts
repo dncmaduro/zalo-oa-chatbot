@@ -39,6 +39,7 @@ interface DocumentSectionSearchRow {
   type: 'DOCUMENT_SECTION';
   score: number;
   documentCode: string;
+  documentTitle: string;
   sectionCode: string;
   title: string;
   content: string;
@@ -71,6 +72,7 @@ export type KnowledgeSearchResult =
       type: 'DOCUMENT_SECTION';
       score: number;
       documentCode: string;
+      documentTitle: string;
       sectionCode: string;
       title: string;
       content: string;
@@ -203,6 +205,7 @@ export class KnowledgeRetrievalService {
         SELECT
           'DOCUMENT_SECTION'::text AS type,
           kd.code AS "documentCode",
+          kdv.title AS "documentTitle",
           kds.section_code AS "sectionCode",
           kds.section_title AS title,
           kds.content,
@@ -254,6 +257,7 @@ export class KnowledgeRetrievalService {
       type: 'DOCUMENT_SECTION',
       score: Number(row.score),
       documentCode: row.documentCode,
+      documentTitle: row.documentTitle,
       sectionCode: row.sectionCode,
       title: row.title,
       content: row.content,

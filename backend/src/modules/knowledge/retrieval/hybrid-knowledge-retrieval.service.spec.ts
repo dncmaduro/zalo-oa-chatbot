@@ -5,6 +5,11 @@ import { HybridKnowledgeRetrievalService } from './hybrid-knowledge-retrieval.se
 import { SemanticKnowledgeRetrievalService } from './semantic-knowledge-retrieval.service';
 
 describe('HybridKnowledgeRetrievalService', () => {
+  const originalEnvironment = {
+    lexicalWeight: process.env.HYBRID_LEXICAL_WEIGHT,
+    semanticWeight: process.env.HYBRID_SEMANTIC_WEIGHT,
+    rrfK: process.env.HYBRID_RRF_K,
+  };
   const item = (knowledgeCode: string, audience: KnowledgeAudience = KnowledgeAudience.EMPLOYEE) =>
     ({
       type: 'KNOWLEDGE_ITEM',
@@ -55,10 +60,16 @@ describe('HybridKnowledgeRetrievalService', () => {
     };
   };
 
-  afterEach(() => {
+  beforeEach(() => {
     delete process.env.HYBRID_LEXICAL_WEIGHT;
     delete process.env.HYBRID_SEMANTIC_WEIGHT;
     delete process.env.HYBRID_RRF_K;
+  });
+
+  afterAll(() => {
+    restoreEnvironmentVariable('HYBRID_LEXICAL_WEIGHT', originalEnvironment.lexicalWeight);
+    restoreEnvironmentVariable('HYBRID_SEMANTIC_WEIGHT', originalEnvironment.semanticWeight);
+    restoreEnvironmentVariable('HYBRID_RRF_K', originalEnvironment.rrfK);
   });
 
   it('merges duplicate item and section candidates, with weighted RRF contributions from both paths', async () => {
@@ -128,4 +139,12 @@ describe('HybridKnowledgeRetrievalService', () => {
 
     await expect(failureService.search({ query: 'query' })).rejects.toThrow('embedding runtime unavailable');
   });
+
+  function restoreEnvironmentVariable(name: string, value: string | undefined): void {
+    if (value === undefined) {
+      delete process.env[name];
+    } else {
+      process.env[name] = value;
+    }
+  }
 });

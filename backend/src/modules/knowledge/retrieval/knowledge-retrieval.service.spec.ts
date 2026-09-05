@@ -29,6 +29,7 @@ describe('KnowledgeRetrievalService', () => {
     type: 'DOCUMENT_SECTION' as const,
     score: 0.4,
     documentCode: 'DOC_001',
+    documentTitle: 'Account guide',
     sectionCode: 'SECTION_001',
     title: 'Password guide',
     content: 'Document content',
@@ -68,7 +69,7 @@ describe('KnowledgeRetrievalService', () => {
     const result = await service.search({
       query: '  reset   password  ',
       audience: KnowledgeAudience.EMPLOYEE,
-      limit: 1,
+      limit: 2,
     });
 
     expect(result).toEqual({
@@ -78,6 +79,11 @@ describe('KnowledgeRetrievalService', () => {
           type: 'KNOWLEDGE_ITEM',
           knowledgeCode: 'KB_001',
           media: [{ mediaCode: 'IMG_001', secureUrl: 'https://example.com/image.png', description: 'Guide image' }],
+        }),
+        expect.objectContaining({
+          type: 'DOCUMENT_SECTION',
+          documentCode: 'DOC_001',
+          documentTitle: 'Account guide',
         }),
       ],
     });

@@ -28,6 +28,7 @@ export class EmbeddingService {
         this.provider = new LocalEmbeddingProvider(
           this.getRequiredEnvironmentVariable('EMBEDDING_MODEL'),
           process.env.LOCAL_EMBEDDING_BASE_URL?.trim() || undefined,
+          process.env.LOCAL_EMBEDDING_KEEP_ALIVE?.trim() || '30m',
         );
         return this.provider;
       case 'openai':

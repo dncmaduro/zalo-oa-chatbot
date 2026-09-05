@@ -17,5 +17,6 @@ import { SemanticKnowledgeRetrievalService } from './retrieval/semantic-knowledg
     SemanticKnowledgeRetrievalService,
     HybridKnowledgeRetrievalService,
   ],
+  exports: [HybridKnowledgeRetrievalService],
 })
 export class KnowledgeModule {}
