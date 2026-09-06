@@ -52,6 +52,23 @@ describe('LLM providers', () => {
     });
   });
 
+  it('allows a caller to further bound local Ollama output without changing keep_alive', async () => {
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ message: { content: '{"ready":true}' } }),
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+    const provider = new LocalLlmProvider('qwen3:8b', 'http://localhost:11434');
+
+    await provider.generateStructured({ systemPrompt: 'system', userPrompt: 'warmup', maxOutputTokens: 16 });
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({
+      keep_alive: '30m',
+      think: false,
+      options: { temperature: 0, num_predict: 16 },
+    });
+  });
+
   it('does not receive Ollama-specific options in the OpenAI provider request', async () => {
     const provider = new OpenAiLlmProvider('test-key', 'configured-chat-model');
     const create = jest.fn().mockResolvedValue({

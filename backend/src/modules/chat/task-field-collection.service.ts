@@ -1,4 +1,5 @@
-import { ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { ConflictException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { performance } from 'node:perf_hooks';
 
 import { ChatChannel, MessageDirection, MessageSenderType, OperatorTaskStatus, ResolutionType } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -47,6 +48,8 @@ export interface TaskContinuationResult {
 
 @Injectable()
 export class TaskFieldCollectionService {
+  private readonly logger = new Logger(TaskFieldCollectionService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly llmService: LlmService,
@@ -58,8 +61,23 @@ export class TaskFieldCollectionService {
     channel: ChatChannel;
     message: string;
   }): Promise<TaskContinuationResult | null> {
+    const startedAt = performance.now();
+    const lookupStartedAt = performance.now();
     const candidates = await this.loadEligibleTasks(params.conversationId);
-    if (candidates.length === 0) return null;
+    const continuationLookupMs = this.elapsedMs(lookupStartedAt);
+    if (candidates.length === 0) {
+      this.logPerformance({
+        conversationId: params.conversationId,
+        inboundMessageId: params.inboundMessageId,
+        candidateCount: 0,
+        continuationLookupMs,
+        continuationDecisionMs: 0,
+        continuationPersistenceMs: 0,
+        totalMs: this.elapsedMs(startedAt),
+        isContinuation: false,
+      });
+      return null;
+    }
 
     const explicitMatches = candidates.map((candidate) => ({
       candidate,
@@ -68,9 +86,23 @@ export class TaskFieldCollectionService {
     const explicitlyMatched = explicitMatches.filter(({ extraction }) => extraction.matchedFields.length > 0);
 
     // This deliberately runs outside a transaction; it receives only compact task metadata.
+    const decisionStartedAt = performance.now();
     const decision = await this.requestDecision(params.message, candidates);
+    const continuationDecisionMs = this.elapsedMs(decisionStartedAt);
     const deterministicallySelected = explicitlyMatched.length === 1 ? explicitlyMatched[0] : null;
-    if (decision.selectedTaskId === null && !deterministicallySelected) return null;
+    if (decision.selectedTaskId === null && !deterministicallySelected) {
+      this.logPerformance({
+        conversationId: params.conversationId,
+        inboundMessageId: params.inboundMessageId,
+        candidateCount: candidates.length,
+        continuationLookupMs,
+        continuationDecisionMs,
+        continuationPersistenceMs: 0,
+        totalMs: this.elapsedMs(startedAt),
+        isContinuation: false,
+      });
+      return null;
+    }
 
     const selected = deterministicallySelected?.candidate ?? candidates.find((candidate) => candidate.id === decision.selectedTaskId);
     if (!selected) throw new InternalServerErrorException('LLM selected an ineligible continuation task.');
@@ -79,7 +111,19 @@ export class TaskFieldCollectionService {
     const llmFields = this.validateCollectedFields(decision.collectedFields, selected.input.requiredFields);
     const collectedFields = { ...llmFields, ...deterministicFields };
 
-    return this.persistContinuation({ ...params, selectedTaskId: selected.id, collectedFields });
+    const persistenceStartedAt = performance.now();
+    const result = await this.persistContinuation({ ...params, selectedTaskId: selected.id, collectedFields });
+    this.logPerformance({
+      conversationId: params.conversationId,
+      inboundMessageId: params.inboundMessageId,
+      candidateCount: candidates.length,
+      continuationLookupMs,
+      continuationDecisionMs,
+      continuationPersistenceMs: this.elapsedMs(persistenceStartedAt),
+      totalMs: this.elapsedMs(startedAt),
+      isContinuation: true,
+    });
+    return result;
   }
 
   private async loadEligibleTasks(conversationId: string): Promise<ContinuationCandidate[]> {
@@ -281,5 +325,23 @@ export class TaskFieldCollectionService {
   private boundText(value: string | null, limit: number): string | null {
     if (!value || value.length <= limit) return value;
     return `${value.slice(0, limit)}…`;
+  }
+
+  private logPerformance(metrics: {
+    conversationId: string;
+    inboundMessageId: string;
+    candidateCount: number;
+    continuationLookupMs: number;
+    continuationDecisionMs: number;
+    continuationPersistenceMs: number;
+    totalMs: number;
+    isContinuation: boolean;
+  }): void {
+    if (process.env.LLM_PERF_LOG?.trim().toLowerCase() !== 'true') return;
+    this.logger.log(JSON.stringify({ event: 'task_continuation_performance', ...metrics }));
+  }
+
+  private elapsedMs(startedAt: number): number {
+    return Math.round(performance.now() - startedAt);
   }
 }

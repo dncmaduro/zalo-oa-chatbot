@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, Logger } from '@nestjs/common';
 
 import {
   ChatChannel,
@@ -34,6 +34,7 @@ const input = {
   message: 'Anh tạo đơn nhưng không thấy tồn kho',
   audience: KnowledgeAudience.EMPLOYEE,
 };
+const originalPerformanceLogging = process.env.LLM_PERF_LOG;
 
 const createHarness = (resolution = baseResolution()) => {
   let messageNumber = 0;
@@ -89,6 +90,15 @@ const createHarness = (resolution = baseResolution()) => {
 };
 
 describe('ChatOrchestratorService', () => {
+  beforeEach(() => {
+    process.env.LLM_PERF_LOG = 'false';
+  });
+
+  afterAll(() => {
+    if (originalPerformanceLogging === undefined) delete process.env.LLM_PERF_LOG;
+    else process.env.LLM_PERF_LOG = originalPerformanceLogging;
+  });
+
   it('creates an active conversation, persists inbound/outbound messages, and returns AUTO_RESPONSE', async () => {
     const { service, transaction, resolver } = createHarness();
 
@@ -119,7 +129,10 @@ describe('ChatOrchestratorService', () => {
     );
     expect(transaction.operatorTask.create).not.toHaveBeenCalled();
     expect(transaction.humanContactRequest.create).not.toHaveBeenCalled();
-    expect(resolver.resolve).toHaveBeenCalledWith({ message: input.message, audience: input.audience });
+    expect(resolver.resolve).toHaveBeenCalledWith(
+      { message: input.message, audience: input.audience },
+      { conversationId: 'conversation-1', inboundMessageId: 'inbound-1' },
+    );
   });
 
   it('reuses the same active conversation for a later message from the same channel user', async () => {
@@ -260,6 +273,32 @@ describe('ChatOrchestratorService', () => {
     await service.handle(input);
 
     expect(events).toEqual(['transaction-start', 'transaction-end', 'resolve', 'transaction-start', 'transaction-end']);
+  });
+
+  it('emits correlated phase timings only when performance logging is enabled', async () => {
+    process.env.LLM_PERF_LOG = 'true';
+    const log = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+    const { service } = createHarness();
+
+    await service.handle(input);
+
+    const performanceLog = log.mock.calls
+      .map(([message]) => JSON.parse(message as string))
+      .find((entry) => entry.event === 'chat_message_performance');
+    expect(performanceLog).toEqual(
+      expect.objectContaining({
+        conversationId: 'conversation-1',
+        inboundMessageId: 'inbound-1',
+        branch: 'resolve',
+        inboundPersistenceMs: expect.any(Number),
+        continuationMs: expect.any(Number),
+        resolveMs: expect.any(Number),
+        resolutionPersistenceMs: expect.any(Number),
+        totalMs: expect.any(Number),
+      }),
+    );
+
+    process.env.LLM_PERF_LOG = 'false';
   });
 });
 

@@ -23,6 +23,7 @@ const fieldTask = (overrides: Record<string, unknown> = {}) => ({
 });
 
 const params = { conversationId: 'conversation-1', inboundMessageId: 'inbound-1', channel: ChatChannel.MOCK, message: 'Tài khoản nguyenvana' };
+const originalPerformanceLogging = process.env.LLM_PERF_LOG;
 
 const createHarness = (tasks: any[] = [fieldTask()]) => {
   const transaction = {
@@ -48,6 +49,15 @@ const createHarness = (tasks: any[] = [fieldTask()]) => {
 };
 
 describe('TaskFieldCollectionService', () => {
+  beforeEach(() => {
+    process.env.LLM_PERF_LOG = 'false';
+  });
+
+  afterAll(() => {
+    if (originalPerformanceLogging === undefined) delete process.env.LLM_PERF_LOG;
+    else process.env.LLM_PERF_LOG = originalPerformanceLogging;
+  });
+
   it('does not call the continuation LLM when no eligible task exists', async () => {
     const { service, llm } = createHarness([]);
 

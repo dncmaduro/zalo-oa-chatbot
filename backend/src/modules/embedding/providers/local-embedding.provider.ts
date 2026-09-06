@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import { performance } from 'node:perf_hooks';
 
 import { EmbeddingProvider } from '../embedding-provider.interface';
 
@@ -16,7 +17,7 @@ export class LocalEmbeddingProvider implements EmbeddingProvider {
   ) {}
 
   async embed(text: string): Promise<number[]> {
-    const startedAt = Date.now();
+    const startedAt = performance.now();
     const response = await fetch(`${this.baseUrl.replace(/\/$/, '')}/api/embed`, {
       method: 'POST',
 
@@ -38,7 +39,7 @@ export class LocalEmbeddingProvider implements EmbeddingProvider {
     }
 
     const data = (await response.json()) as OllamaEmbedResponse;
-    this.logPerformance(Date.now() - startedAt);
+    this.logPerformance(Math.round(performance.now() - startedAt));
 
     const embedding = data.embeddings?.[0];
 

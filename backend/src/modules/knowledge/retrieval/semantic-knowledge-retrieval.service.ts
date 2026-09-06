@@ -1,4 +1,5 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { performance } from 'node:perf_hooks';
 
 import { KnowledgeAudience, KnowledgeVersionStatus, Prisma, ResolutionType } from '../../../generated/prisma/client';
 import { EmbeddingService } from '../../embedding/embedding.service';
@@ -9,6 +10,11 @@ import { SearchKnowledgeDto } from '../dto/search-knowledge.dto';
 const DEFAULT_LIMIT = 5;
 const MAX_LIMIT = 20;
 const DEFAULT_MINIMUM_SEMANTIC_SCORE = 0.55;
+
+export interface RetrievalPerformanceContext {
+  conversationId: string;
+  inboundMessageId: string;
+}
 
 export interface KnowledgeMediaResult {
   mediaCode: string;
@@ -84,32 +90,40 @@ export type SemanticKnowledgeSearchResult =
 
 @Injectable()
 export class SemanticKnowledgeRetrievalService {
+  private readonly logger = new Logger(SemanticKnowledgeRetrievalService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly embeddingService: EmbeddingService,
   ) {}
 
-  async search(input: SearchKnowledgeDto) {
+  async search(input: SearchKnowledgeDto, performanceContext?: RetrievalPerformanceContext) {
     const query = this.normalizeQuery(input.query);
     const audience = this.resolveAudience(input.audience);
     const limit = this.resolveLimit(input.limit);
     const minimumScore = this.resolveMinimumScore();
     const model = this.embeddingService.model;
+    const queryEmbeddingStartedAt = performance.now();
     const vector = await this.createQueryVector(query);
+    const queryEmbeddingMs = this.elapsedMs(queryEmbeddingStartedAt);
     const vectorLiteral = this.toVectorLiteral(vector);
     const allowedAudiences = this.getAllowedAudiences(audience);
     const candidateLimit = MAX_LIMIT;
 
+    const semanticSearchStartedAt = performance.now();
     const [items, sections] = await Promise.all([
       this.searchKnowledgeItems(vectorLiteral, model, allowedAudiences, minimumScore, candidateLimit),
       this.searchDocumentSections(vectorLiteral, model, allowedAudiences, minimumScore, candidateLimit),
     ]);
+    const semanticSearchMs = this.elapsedMs(semanticSearchStartedAt);
     const results = [...items, ...sections].sort((left, right) => this.compareResults(left, right)).slice(0, limit);
 
-    return {
+    const response = {
       query,
       results,
     };
+    this.logPerformance(performanceContext, { queryEmbeddingMs, semanticSearchMs });
+    return response;
   }
 
   private async createQueryVector(query: string): Promise<number[]> {
@@ -284,6 +298,18 @@ export class SemanticKnowledgeRetrievalService {
     }
 
     return query;
+  }
+
+  private logPerformance(
+    performanceContext: RetrievalPerformanceContext | undefined,
+    metrics: { queryEmbeddingMs: number; semanticSearchMs: number },
+  ): void {
+    if (!performanceContext || process.env.LLM_PERF_LOG?.trim().toLowerCase() !== 'true') return;
+    this.logger.log(JSON.stringify({ event: 'semantic_retrieval_performance', ...performanceContext, ...metrics }));
+  }
+
+  private elapsedMs(startedAt: number): number {
+    return Math.round(performance.now() - startedAt);
   }
 
   private resolveAudience(value: unknown): KnowledgeAudience {

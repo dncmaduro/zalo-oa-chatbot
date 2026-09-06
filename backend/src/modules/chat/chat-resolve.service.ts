@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { performance } from 'node:perf_hooks';
 
 import { KnowledgeAudience, ResolutionType } from '../../generated/prisma/client';
 import { LlmService } from '../llm/llm.service';
@@ -51,6 +52,11 @@ export interface ChatResolveResult {
   model: string | null;
 }
 
+export interface ChatResolvePerformanceContext {
+  conversationId: string;
+  inboundMessageId: string;
+}
+
 @Injectable()
 export class ChatResolveService {
   private readonly logger = new Logger(ChatResolveService.name);
@@ -61,18 +67,21 @@ export class ChatResolveService {
     private readonly llmService: LlmService,
   ) {}
 
-  async resolve(input: ResolveChatDto): Promise<ChatResolveResult> {
+  async resolve(input: ResolveChatDto, performanceContext?: ChatResolvePerformanceContext): Promise<ChatResolveResult> {
     const performanceLoggingEnabled = this.isPerformanceLoggingEnabled();
-    const startedAt = Date.now();
+    const startedAt = performance.now();
     const message = this.normalizeMessage(input.message);
     const audience = this.resolveAudience(input.audience);
-    const retrievalStartedAt = Date.now();
-    const retrieval = await this.hybridRetrievalService.search({
+    const retrievalStartedAt = performance.now();
+    const retrievalInput = {
       query: message,
       audience,
       limit: RETRIEVAL_CANDIDATE_LIMIT,
-    });
-    const retrievalMs = Date.now() - retrievalStartedAt;
+    };
+    const retrieval = performanceContext
+      ? await this.hybridRetrievalService.search(retrievalInput, performanceContext)
+      : await this.hybridRetrievalService.search(retrievalInput);
+    const retrievalMs = this.elapsedMs(retrievalStartedAt);
 
     if (retrieval.results.length === 0) {
       const result = this.createHumanContactFallback(null);
@@ -82,22 +91,22 @@ export class ChatResolveService {
         ragContextBuildMs: 0,
         llmMs: 0,
         serverValidationMs: 0,
-        totalMs: Date.now() - startedAt,
-      });
+        totalMs: this.elapsedMs(startedAt),
+      }, performanceContext);
 
       return result;
     }
 
-    const ragContextBuildStartedAt = Date.now();
+    const ragContextBuildStartedAt = performance.now();
     const context = this.ragContextService.build(message, retrieval.results);
-    const ragContextBuildMs = Date.now() - ragContextBuildStartedAt;
-    const llmStartedAt = Date.now();
+    const ragContextBuildMs = this.elapsedMs(ragContextBuildStartedAt);
+    const llmStartedAt = performance.now();
     const rawDecision = await this.llmService.generateStructured({
       systemPrompt: this.getSystemPrompt(),
       userPrompt: context.userPrompt,
     });
-    const llmMs = Date.now() - llmStartedAt;
-    const serverValidationStartedAt = Date.now();
+    const llmMs = this.elapsedMs(llmStartedAt);
+    const serverValidationStartedAt = performance.now();
     const decision = this.validateDecision(rawDecision, context.candidates);
     const model = this.llmService.model;
     let result: ChatResolveResult;
@@ -159,9 +168,9 @@ export class ChatResolveService {
       retrievalMs,
       ragContextBuildMs,
       llmMs,
-      serverValidationMs: Date.now() - serverValidationStartedAt,
-      totalMs: Date.now() - startedAt,
-    });
+      serverValidationMs: this.elapsedMs(serverValidationStartedAt),
+      totalMs: this.elapsedMs(startedAt),
+    }, performanceContext);
 
     return result;
   }
@@ -381,6 +390,7 @@ export class ChatResolveService {
       serverValidationMs: number;
       totalMs: number;
     },
+    performanceContext?: ChatResolvePerformanceContext,
   ): void {
     if (!enabled) {
       return;
@@ -389,8 +399,13 @@ export class ChatResolveService {
     this.logger.log(
       JSON.stringify({
         event: 'chat_resolve_performance',
+        ...performanceContext,
         ...metrics,
       }),
     );
+  }
+
+  private elapsedMs(startedAt: number): number {
+    return Math.round(performance.now() - startedAt);
   }
 }

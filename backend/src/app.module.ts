@@ -11,6 +11,7 @@ import { OperatorTaskModule } from './modules/operator-tasks/operator-task.modul
 import { AuthModule } from './modules/auth/auth.module';
 import { OperatorModule } from './modules/operators/operator.module';
 import { HumanContactModule } from './modules/human-contacts/human-contact.module';
+import { LocalAiWarmupModule } from './modules/local-ai-warmup/local-ai-warmup.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { HumanContactModule } from './modules/human-contacts/human-contact.modul
     AuthModule,
     OperatorModule,
     HumanContactModule,
+    LocalAiWarmupModule,
   ],
   controllers: [AppController],
   providers: [AppService],

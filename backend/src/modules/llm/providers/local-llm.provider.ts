@@ -40,7 +40,7 @@ export class LocalLlmProvider implements LlmProvider {
         keep_alive: '30m',
         options: {
           temperature: 0,
-          num_predict: DECISION_NUM_PREDICT,
+          num_predict: request.maxOutputTokens ?? DECISION_NUM_PREDICT,
         },
         messages: [
           { role: 'system', content: request.systemPrompt },

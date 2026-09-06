@@ -5,6 +5,7 @@ import { KnowledgeRetrievalService, KnowledgeSearchResult } from './knowledge-re
 import {
   SemanticKnowledgeRetrievalService,
   SemanticKnowledgeSearchResult,
+  RetrievalPerformanceContext,
 } from './semantic-knowledge-retrieval.service';
 
 const DEFAULT_LIMIT = 5;
@@ -36,15 +37,18 @@ export class HybridKnowledgeRetrievalService {
     private readonly semanticRetrievalService: SemanticKnowledgeRetrievalService,
   ) {}
 
-  async search(input: SearchKnowledgeDto) {
+  async search(input: SearchKnowledgeDto, performanceContext?: RetrievalPerformanceContext) {
     const limit = this.resolveLimit(input.limit);
     const candidateLimit = this.resolveCandidateLimit(limit);
     const configuration = this.resolveConfiguration();
     const candidateInput = { ...input, limit: candidateLimit };
 
+    const semanticSearch = performanceContext
+      ? this.semanticRetrievalService.search(candidateInput, performanceContext)
+      : this.semanticRetrievalService.search(candidateInput);
     const [lexicalResponse, semanticResponse] = await Promise.all([
       this.lexicalRetrievalService.search(candidateInput),
-      this.semanticRetrievalService.search(candidateInput),
+      semanticSearch,
     ]);
     const candidates = new Map<string, HybridCandidate>();
 

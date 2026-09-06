@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { performance } from 'node:perf_hooks';
 
 import {
   ConversationStatus,
@@ -35,6 +36,8 @@ export interface ChatMessageResult {
 
 @Injectable()
 export class ChatOrchestratorService {
+  private readonly logger = new Logger(ChatOrchestratorService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly chatResolveService: ChatResolveService,
@@ -42,30 +45,61 @@ export class ChatOrchestratorService {
   ) {}
 
   async handle(input: NormalizedChatMessageInput): Promise<ChatMessageResult> {
+    const startedAt = performance.now();
+    const inboundPersistenceStartedAt = performance.now();
     const { conversation, inboundMessage } = await this.persistInboundMessage(input);
+    const inboundPersistenceMs = this.elapsedMs(inboundPersistenceStartedAt);
 
+    const continuationStartedAt = performance.now();
     const continuation = await this.taskFieldCollectionService.tryContinue({
       conversationId: conversation.id,
       inboundMessageId: inboundMessage.id,
       channel: input.channel,
       message: input.message,
     });
-    if (continuation) return continuation;
+    const continuationMs = this.elapsedMs(continuationStartedAt);
+    if (continuation) {
+      this.logPerformance({
+        conversationId: conversation.id,
+        inboundMessageId: inboundMessage.id,
+        branch: 'continuation',
+        inboundPersistenceMs,
+        continuationMs,
+        resolveMs: 0,
+        resolutionPersistenceMs: 0,
+        totalMs: this.elapsedMs(startedAt),
+      });
+      return continuation;
+    }
 
     // Retrieval and LLM execution deliberately happen after the inbound transaction commits.
+    const resolveStartedAt = performance.now();
     const resolution = await this.chatResolveService.resolve({
       message: input.message,
       audience: input.audience,
-    });
+    }, { conversationId: conversation.id, inboundMessageId: inboundMessage.id });
+    const resolveMs = this.elapsedMs(resolveStartedAt);
     const selectedKnowledge = await this.findSelectedKnowledge(resolution);
 
-    return this.persistResolvedResult({
+    const resolutionPersistenceStartedAt = performance.now();
+    const result = await this.persistResolvedResult({
       input,
       conversationId: conversation.id,
       inboundMessageId: inboundMessage.id,
       resolution,
       selectedKnowledge,
     });
+    this.logPerformance({
+      conversationId: conversation.id,
+      inboundMessageId: inboundMessage.id,
+      branch: 'resolve',
+      inboundPersistenceMs,
+      continuationMs,
+      resolveMs,
+      resolutionPersistenceMs: this.elapsedMs(resolutionPersistenceStartedAt),
+      totalMs: this.elapsedMs(startedAt),
+    });
+    return result;
   }
 
   private async persistInboundMessage(input: NormalizedChatMessageInput) {
@@ -118,6 +152,24 @@ export class ChatOrchestratorService {
 
       return { conversation, inboundMessage };
     });
+  }
+
+  private logPerformance(metrics: {
+    conversationId: string;
+    inboundMessageId: string;
+    branch: 'continuation' | 'resolve';
+    inboundPersistenceMs: number;
+    continuationMs: number;
+    resolveMs: number;
+    resolutionPersistenceMs: number;
+    totalMs: number;
+  }): void {
+    if (process.env.LLM_PERF_LOG?.trim().toLowerCase() !== 'true') return;
+    this.logger.log(JSON.stringify({ event: 'chat_message_performance', ...metrics }));
+  }
+
+  private elapsedMs(startedAt: number): number {
+    return Math.round(performance.now() - startedAt);
   }
 
   private async findSelectedKnowledge(resolution: ChatResolveResult): Promise<SelectedKnowledgeRecord> {

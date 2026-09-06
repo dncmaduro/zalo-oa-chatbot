@@ -1,6 +1,7 @@
 export interface LlmStructuredRequest {
   systemPrompt: string;
   userPrompt: string;
+  maxOutputTokens?: number;
 }
 
 export interface LlmProvider {

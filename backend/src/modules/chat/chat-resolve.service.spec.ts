@@ -356,7 +356,10 @@ describe('ChatResolveService', () => {
     const log = jest.spyOn(Logger.prototype, 'log').mockImplementation();
     const { service } = createService([knowledgeItem()], decision());
 
-    await service.resolve({ message: 'Cần trợ giúp' });
+    await service.resolve(
+      { message: 'Cần trợ giúp' },
+      { conversationId: 'conversation-perf', inboundMessageId: 'inbound-perf' },
+    );
 
     const performanceLog = log.mock.calls
       .map(([message]) => JSON.parse(message as string))
@@ -365,6 +368,8 @@ describe('ChatResolveService', () => {
     expect(performanceLog).toEqual(
       expect.objectContaining({
         event: 'chat_resolve_performance',
+        conversationId: 'conversation-perf',
+        inboundMessageId: 'inbound-perf',
         retrievalMs: expect.any(Number),
         ragContextBuildMs: expect.any(Number),
         llmMs: expect.any(Number),
