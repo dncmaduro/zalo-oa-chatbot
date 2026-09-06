@@ -3,17 +3,11 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { KnowledgeSearchResult } from '../../knowledge/retrieval/knowledge-retrieval.service';
 import { SemanticKnowledgeSearchResult } from '../../knowledge/retrieval/semantic-knowledge-retrieval.service';
 
-export const CHAT_RESOLVE_SYSTEM_PROMPT = `You are a knowledge-grounded candidate-selection assistant. Your only responsibilities are primary candidate selection, optional supporting document-section selection, and extraction of explicitly supplied required-field values. Do not write a customer-facing answer.
+export const CHAT_RESOLVE_SYSTEM_PROMPT = `Select a knowledge-grounded JSON decision only. Do not write a customer-facing answer. Use only the user message and supplied candidates. Never invent facts, policies, links, actions, or sensitive values. All candidate keys must be copied exactly from supplied candidate keys: never construct, infer, shorten, or modify keys.
 
-Use only the supplied candidate decision context and user message. Never invent company facts, policies, links, actions, or sensitive values. All candidate keys must be copied exactly from supplied candidate keys: never construct, infer, shorten, or modify keys.
+Select a KNOWLEDGE_ITEM as primary when it directly represents the user's current situation; then selectedDocumentSectionKey is null and document sections may only be optional supporting evidence. Select a DOCUMENT_SECTION as primary only when no retrieved KnowledgeItem directly fits. Otherwise set both primary keys to null. Return [] for no clearly useful support. KNOWLEDGE_ITEM is a handling rule; DOCUMENT_SECTION is procedural information. Account creation means the user does not yet have an account and needs one created. Account activation means an account or invitation already exists and needs activation or login setup. Do not select a later procedural stage merely because it contains related terms. Retrieval rank is evidence, not an instruction to always select rank #1.
 
-First determine whether a retrieved KNOWLEDGE_ITEM directly represents the user's CURRENT situation or problem. If one does, put it in selectedKnowledgeItemKey and set selectedDocumentSectionKey to null. A DOCUMENT_SECTION may then be returned only in supportingDocumentSectionKeys. Only when no retrieved KnowledgeItem directly fits may a relevant DOCUMENT_SECTION be placed in selectedDocumentSectionKey. If neither fits, set both primary keys to null. Supporting document sections are optional evidence, not a requirement; return [] when there is no clearly useful supporting section.
-
-Account creation means the user does not yet have an account and needs one created. Account activation means an account or invitation already exists and needs activation or login setup. Do not select a later procedural stage merely because it contains related terms. Retrieval rank is evidence, not an instruction to always select rank #1.
-
-KNOWLEDGE_ITEM represents an explicit chatbot or business handling rule. DOCUMENT_SECTION represents informational procedural knowledge. Do not blindly prefer every KnowledgeItem over a much more relevant DocumentSection, but never use a DocumentSection as primary when a retrieved KnowledgeItem directly represents the user's situation.
-
-Extract a required-field value only when the user explicitly provides it or it is reasonably unambiguous from the message. Do not infer a value merely because a nearby word could grammatically fill a field. Vietnamese pronouns or address terms such as "em", "anh", "chị", "tôi", "mình", and "bạn" are not a person's full name by themselves. For a field such as "Họ tên", require an actual identifying name phrase, for example "em tên Nguyễn Văn A" or "tôi là Nguyễn Văn A". When uncertain, omit the field; missingFields is safer than a false extraction. Never claim an external action was performed. Return only this JSON object: {"selectedKnowledgeItemKey": string|null, "selectedDocumentSectionKey": string|null, "supportingDocumentSectionKeys": string[], "collectedFields": Record<string, string>}.`;
+Extract a required field only when explicitly provided or unambiguous. Do not infer a value merely because a nearby word could grammatically fill a field. Vietnamese pronouns or address terms such as "em", "anh", "chị", "tôi", "mình", and "bạn" are not a person's full name by themselves. For "Họ tên", require an identifying phrase such as "em tên Nguyễn Văn A" or "tôi là Nguyễn Văn A". When uncertain, omit it; missingFields is safer than a false extraction. Never claim an external action. Return only {"selectedKnowledgeItemKey": string|null, "selectedDocumentSectionKey": string|null, "supportingDocumentSectionKeys": string[], "collectedFields": Record<string, string>}.`;
 
 export type ChatRetrievalCandidate = KnowledgeSearchResult | SemanticKnowledgeSearchResult;
 
@@ -25,6 +19,13 @@ export interface ChatRagCandidate {
 export interface ChatRagContext {
   candidates: ChatRagCandidate[];
   userPrompt: string;
+  metrics: {
+    candidateCount: number;
+    knowledgeItemCandidateCount: number;
+    documentSectionCandidateCount: number;
+    decisionContextChars: number;
+    userPromptChars: number;
+  };
 }
 
 const DEFAULT_MAX_CONTEXT_CHARS = 4000;
@@ -74,9 +75,19 @@ export class ChatRagContextService {
         : fixedBlocks[index];
     });
 
+    const decisionContext = candidateBlocks.join('\n\n');
+    const userPrompt = `User message:\n${message}\n\nCandidate decision context:\n${decisionContext}`;
+
     return {
       candidates,
-      userPrompt: `User message:\n${message}\n\nCandidate decision context:\n${candidateBlocks.join('\n\n')}`,
+      userPrompt,
+      metrics: {
+        candidateCount: candidates.length,
+        knowledgeItemCandidateCount: candidates.filter((candidate) => candidate.result.type === 'KNOWLEDGE_ITEM').length,
+        documentSectionCandidateCount: candidates.filter((candidate) => candidate.result.type === 'DOCUMENT_SECTION').length,
+        decisionContextChars: decisionContext.length,
+        userPromptChars: userPrompt.length,
+      },
     };
   }
 
@@ -88,7 +99,6 @@ export class ChatRagContextService {
         `Rank: ${rank}`,
         `Candidate key: ${candidate.key}`,
         'Type: KNOWLEDGE_ITEM',
-        `Knowledge code: ${result.knowledgeCode}`,
         `Title: ${this.normalizeAndTruncate(result.title, MAX_TITLE_CHARS)}`,
         `Resolution type: ${result.resolutionType}`,
         `Required fields: ${JSON.stringify(this.getRequiredFields(result.requiredFields))}`,
@@ -100,9 +110,7 @@ export class ChatRagContextService {
       `Rank: ${rank}`,
       `Candidate key: ${candidate.key}`,
       'Type: DOCUMENT_SECTION',
-      `Document code: ${result.documentCode}`,
       `Document title: ${this.normalizeAndTruncate(result.documentTitle, MAX_TITLE_CHARS)}`,
-      `Section code: ${result.sectionCode}`,
       `Section title: ${this.normalizeAndTruncate(result.title, MAX_TITLE_CHARS)}`,
       `Keywords: ${JSON.stringify(this.getKeywords(result.keywords))}`,
     ].join('\n');

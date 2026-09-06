@@ -46,13 +46,22 @@ describe('ChatRagContextService', () => {
     expect(context.userPrompt).toContain('Resolution type: OPERATOR_TASK');
     expect(context.userPrompt).toContain('Required fields: ["Họ tên"]');
     expect(context.userPrompt).toContain('Document title: Hướng dẫn tài khoản');
-    expect(context.userPrompt).toContain('Section code: SEC_01');
+    expect(context.userPrompt).not.toContain('Knowledge code: KB_001');
+    expect(context.userPrompt).not.toContain('Document code: DOC_001');
+    expect(context.userPrompt).not.toContain('Section code: SEC_01');
     expect(context.userPrompt).toContain(`Decision snippet: ${'A'.repeat(319)}…`);
     expect(context.userPrompt).toContain(`Decision snippet: ${'B'.repeat(319)}…`);
     expect(context.userPrompt).not.toContain('A'.repeat(10000));
     expect(context.userPrompt).not.toContain('B'.repeat(10000));
     expect(context.userPrompt).not.toContain('Không được đưa vào context quyết định.');
     expect(context.userPrompt).not.toContain('https://example.com');
+    expect(context.metrics).toEqual({
+      candidateCount: 2,
+      knowledgeItemCandidateCount: 1,
+      documentSectionCandidateCount: 1,
+      decisionContextChars: expect.any(Number),
+      userPromptChars: context.userPrompt.length,
+    });
   });
 
   it('instructs the model to select the current state and return a decision-only schema', () => {

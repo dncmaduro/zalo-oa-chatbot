@@ -54,7 +54,7 @@ export class LocalLlmProvider implements LlmProvider {
     }
 
     const data = (await response.json()) as OllamaChatResponse;
-    this.logPerformance(data);
+    this.logPerformance(data, request.metadata);
     const content = data.message?.content;
 
     if (typeof content !== 'string' || !content.trim()) {
@@ -72,7 +72,7 @@ export class LocalLlmProvider implements LlmProvider {
     }
   }
 
-  private logPerformance(data: OllamaChatResponse): void {
+  private logPerformance(data: OllamaChatResponse, metadata: LlmStructuredRequest['metadata']): void {
     if (!this.isPerformanceLoggingEnabled()) {
       return;
     }
@@ -84,14 +84,24 @@ export class LocalLlmProvider implements LlmProvider {
       JSON.stringify({
         event: 'ollama_llm_performance',
         model: this.model,
+        purpose: metadata?.purpose ?? 'unspecified',
+        correlationId: metadata?.correlationId ?? null,
+        totalDurationNs: data.total_duration ?? null,
+        loadDurationNs: data.load_duration ?? null,
+        promptEvalDurationNs: data.prompt_eval_duration ?? null,
+        evalDurationNs: data.eval_duration ?? null,
+        promptEvalCount: data.prompt_eval_count ?? null,
+        evalCount: data.eval_count ?? null,
         totalSeconds: this.toSeconds(data.total_duration),
         loadSeconds: this.toSeconds(data.load_duration),
         promptTokens: this.toCount(data.prompt_eval_count),
         promptEvalSeconds: promptEvaluationSeconds,
         promptTokensPerSecond: this.toTokensPerSecond(data.prompt_eval_count, promptEvaluationSeconds),
+        promptMsPerToken: this.toMillisecondsPerToken(data.prompt_eval_count, promptEvaluationSeconds),
         generatedTokens: this.toCount(data.eval_count),
         generationSeconds,
         generatedTokensPerSecond: this.toTokensPerSecond(data.eval_count, generationSeconds),
+        generationMsPerToken: this.toMillisecondsPerToken(data.eval_count, generationSeconds),
       }),
     );
   }
@@ -123,5 +133,12 @@ export class LocalLlmProvider implements LlmProvider {
     }
 
     return Number((tokenCount / durationSeconds).toFixed(2));
+  }
+
+  private toMillisecondsPerToken(tokenCount: number | undefined, durationSeconds: number | null): number | null {
+    if (typeof tokenCount !== 'number' || !Number.isFinite(tokenCount) || durationSeconds === null || tokenCount <= 0) {
+      return null;
+    }
+    return Number(((durationSeconds * 1_000) / tokenCount).toFixed(3));
   }
 }

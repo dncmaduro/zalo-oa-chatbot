@@ -32,7 +32,11 @@ describe('LLM providers', () => {
     global.fetch = fetchMock as unknown as typeof fetch;
     const provider = new LocalLlmProvider('qwen3:8b', 'http://localhost:11434/');
 
-    await provider.generateStructured({ systemPrompt: 'system', userPrompt: 'user' });
+    await provider.generateStructured({
+      systemPrompt: 'system',
+      userPrompt: 'user',
+      metadata: { purpose: 'chat_resolve', correlationId: 'conversation-1:message-1' },
+    });
 
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:11434/api/chat', expect.any(Object));
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
@@ -80,7 +84,11 @@ describe('LLM providers', () => {
       },
     };
 
-    await provider.generateStructured({ systemPrompt: 'system', userPrompt: 'user' });
+    await provider.generateStructured({
+      systemPrompt: 'system',
+      userPrompt: 'user',
+      metadata: { purpose: 'chat_resolve', correlationId: 'conversation-1:message-1' },
+    });
 
     const request = create.mock.calls[0][0];
     expect(request).toMatchObject({
@@ -91,6 +99,7 @@ describe('LLM providers', () => {
     });
     expect(request).not.toHaveProperty('think');
     expect(request).not.toHaveProperty('keep_alive');
+    expect(request).not.toHaveProperty('metadata');
     expect(request.options).toBeUndefined();
   });
 
@@ -111,21 +120,34 @@ describe('LLM providers', () => {
     }) as unknown as typeof fetch;
     const provider = new LocalLlmProvider('qwen3:8b', 'http://localhost:11434');
 
-    await provider.generateStructured({ systemPrompt: 'secret system', userPrompt: 'secret user message' });
+    await provider.generateStructured({
+      systemPrompt: 'secret system',
+      userPrompt: 'secret user message',
+      metadata: { purpose: 'chat_resolve', correlationId: 'conversation-1:message-1' },
+    });
 
-    expect(log).toHaveBeenCalledWith(
-      JSON.stringify({
-        event: 'ollama_llm_performance',
-        model: 'qwen3:8b',
-        totalSeconds: 3.5,
-        loadSeconds: 0.5,
-        promptTokens: 100,
-        promptEvalSeconds: 2,
-        promptTokensPerSecond: 50,
-        generatedTokens: 50,
-        generationSeconds: 1,
-        generatedTokensPerSecond: 50,
-      }),
-    );
+    const performanceLog = JSON.parse(log.mock.calls[0][0]);
+    expect(performanceLog).toMatchObject({
+      event: 'ollama_llm_performance',
+      model: 'qwen3:8b',
+      purpose: 'chat_resolve',
+      correlationId: 'conversation-1:message-1',
+      totalDurationNs: 3_500_000_000,
+      loadDurationNs: 500_000_000,
+      promptEvalDurationNs: 2_000_000_000,
+      evalDurationNs: 1_000_000_000,
+      promptEvalCount: 100,
+      evalCount: 50,
+      totalSeconds: 3.5,
+      loadSeconds: 0.5,
+      promptTokens: 100,
+      promptEvalSeconds: 2,
+      promptTokensPerSecond: 50,
+      promptMsPerToken: 20,
+      generatedTokens: 50,
+      generationSeconds: 1,
+      generatedTokensPerSecond: 50,
+      generationMsPerToken: 20,
+    });
   });
 });

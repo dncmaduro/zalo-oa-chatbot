@@ -173,6 +173,7 @@ export class OperatorTaskWorkflowService {
       systemPrompt:
         'Return JSON only with exactly one key, draftResponse. Transform only the supplied authoritative facts into a customer-facing Vietnamese response. Do not add facts, actions, dates, identifiers, URLs, internal instructions, task IDs, or claims not stated in operatorResult.',
       userPrompt: JSON.stringify(authoritativeInput),
+      metadata: { purpose: 'operator_response_generation', correlationId: taskId },
     });
     const draftResponse = this.validateDraft(rawDraft);
 

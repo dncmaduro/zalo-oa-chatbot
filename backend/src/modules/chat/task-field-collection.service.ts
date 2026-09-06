@@ -14,6 +14,7 @@ const ELIGIBLE_STATUSES: OperatorTaskStatus[] = [
 ];
 const NAME_FIELDS = new Set(['họ tên', 'họ và tên']);
 const NAME_PRONOUNS = new Set(['em', 'anh', 'chị', 'tôi', 'mình', 'bạn']);
+const CONTINUATION_DECISION_MAX_OUTPUT_TOKENS = 96;
 
 interface TaskInputData {
   requiredFields: string[];
@@ -75,6 +76,9 @@ export class TaskFieldCollectionService {
         continuationPersistenceMs: 0,
         totalMs: this.elapsedMs(startedAt),
         isContinuation: false,
+        systemPromptChars: 0,
+        userPromptChars: 0,
+        knowledgeItemCandidateCount: 0,
       });
       return null;
     }
@@ -87,7 +91,10 @@ export class TaskFieldCollectionService {
 
     // This deliberately runs outside a transaction; it receives only compact task metadata.
     const decisionStartedAt = performance.now();
-    const decision = await this.requestDecision(params.message, candidates);
+    const decision = await this.requestDecision(params.message, candidates, {
+      conversationId: params.conversationId,
+      inboundMessageId: params.inboundMessageId,
+    });
     const continuationDecisionMs = this.elapsedMs(decisionStartedAt);
     const deterministicallySelected = explicitlyMatched.length === 1 ? explicitlyMatched[0] : null;
     if (decision.selectedTaskId === null && !deterministicallySelected) {
@@ -100,6 +107,7 @@ export class TaskFieldCollectionService {
         continuationPersistenceMs: 0,
         totalMs: this.elapsedMs(startedAt),
         isContinuation: false,
+        ...decision.promptMetrics,
       });
       return null;
     }
@@ -122,6 +130,7 @@ export class TaskFieldCollectionService {
       continuationPersistenceMs: this.elapsedMs(persistenceStartedAt),
       totalMs: this.elapsedMs(startedAt),
       isContinuation: true,
+      ...decision.promptMetrics,
     });
     return result;
   }
@@ -162,22 +171,33 @@ export class TaskFieldCollectionService {
       .filter((task) => task.input.missingFields.length > 0);
   }
 
-  private async requestDecision(message: string, candidates: ContinuationCandidate[]) {
+  private async requestDecision(
+    message: string,
+    candidates: ContinuationCandidate[],
+    correlation: { conversationId: string; inboundMessageId: string },
+  ) {
+    const systemPrompt =
+      'Return JSON only with exactly selectedTaskId and collectedFields. Select a task only if the user message clearly continues one supplied task; otherwise selectedTaskId must be null. Extract only explicit, unambiguous values for supplied required fields. Never return routing, status, response text, or invented fields.';
+    const userPrompt = JSON.stringify({
+      message,
+      tasks: candidates.map((task) => ({
+        id: task.id,
+        taskType: task.taskType,
+        description: this.boundText(task.description, 500),
+        knowledge: task.knowledge ? { code: task.knowledge.code, title: task.knowledge.title } : null,
+        requiredFields: task.input.requiredFields,
+        collectedFields: task.input.collectedFields,
+        missingFields: task.input.missingFields,
+      })),
+    });
     const raw = await this.llmService.generateStructured({
-      systemPrompt:
-        'Return JSON only with exactly selectedTaskId and collectedFields. Select a task only if the user message clearly continues one supplied task; otherwise selectedTaskId must be null. Extract only explicit, unambiguous values for supplied required fields. Never return routing, status, response text, or invented fields.',
-      userPrompt: JSON.stringify({
-        message,
-        tasks: candidates.map((task) => ({
-          id: task.id,
-          taskType: task.taskType,
-          description: this.boundText(task.description, 500),
-          knowledge: task.knowledge ? { code: task.knowledge.code, title: task.knowledge.title } : null,
-          requiredFields: task.input.requiredFields,
-          collectedFields: task.input.collectedFields,
-          missingFields: task.input.missingFields,
-        })),
-      }),
+      systemPrompt,
+      userPrompt,
+      maxOutputTokens: CONTINUATION_DECISION_MAX_OUTPUT_TOKENS,
+      metadata: {
+        purpose: 'task_continuation',
+        correlationId: `${correlation.conversationId}:${correlation.inboundMessageId}`,
+      },
     });
 
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
@@ -199,7 +219,15 @@ export class TaskFieldCollectionService {
       throw new InternalServerErrorException('LLM returned fields without a continuation task.');
     }
 
-    return { selectedTaskId, collectedFields };
+    return {
+      selectedTaskId,
+      collectedFields,
+      promptMetrics: {
+        systemPromptChars: systemPrompt.length,
+        userPromptChars: userPrompt.length,
+        knowledgeItemCandidateCount: candidates.filter((candidate) => candidate.knowledge !== null).length,
+      },
+    };
   }
 
   private async persistContinuation(params: {
@@ -336,6 +364,9 @@ export class TaskFieldCollectionService {
     continuationPersistenceMs: number;
     totalMs: number;
     isContinuation: boolean;
+    systemPromptChars: number;
+    userPromptChars: number;
+    knowledgeItemCandidateCount: number;
   }): void {
     if (process.env.LLM_PERF_LOG?.trim().toLowerCase() !== 'true') return;
     this.logger.log(JSON.stringify({ event: 'task_continuation_performance', ...metrics }));

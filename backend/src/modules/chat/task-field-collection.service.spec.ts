@@ -66,7 +66,7 @@ describe('TaskFieldCollectionService', () => {
   });
 
   it('merges one supplied field into the same task and asks only for the remaining field', async () => {
-    const { service, transaction } = createHarness();
+    const { service, transaction, llm } = createHarness();
 
     await expect(service.tryContinue(params)).resolves.toMatchObject({
       operatorTask: { id: 'task-a', status: OperatorTaskStatus.PENDING },
@@ -83,6 +83,12 @@ describe('TaskFieldCollectionService', () => {
     );
     expect(transaction.operatorTaskEvent.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ action: 'FIELDS_UPDATED', data: { fieldNames: ['Tên tài khoản'] } }) }),
+    );
+    expect(llm.generateStructured).toHaveBeenCalledWith(
+      expect.objectContaining({
+        maxOutputTokens: 96,
+        metadata: { purpose: 'task_continuation', correlationId: 'conversation-1:inbound-1' },
+      }),
     );
   });
 

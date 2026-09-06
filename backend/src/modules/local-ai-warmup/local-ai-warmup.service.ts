@@ -65,6 +65,7 @@ export class LocalAiWarmupService {
         systemPrompt: WARMUP_SYSTEM_PROMPT,
         userPrompt: WARMUP_USER_PROMPT,
         maxOutputTokens: WARMUP_MAX_OUTPUT_TOKENS,
+        metadata: { purpose: 'warmup' },
       }),
     );
   }

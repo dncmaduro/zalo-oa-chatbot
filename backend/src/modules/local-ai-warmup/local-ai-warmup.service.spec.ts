@@ -60,6 +60,7 @@ describe('LocalAiWarmupService', () => {
       systemPrompt: 'Return exactly the JSON object {"ready":true}.',
       userPrompt: 'Confirm readiness.',
       maxOutputTokens: 16,
+      metadata: { purpose: 'warmup' },
     });
   });
 

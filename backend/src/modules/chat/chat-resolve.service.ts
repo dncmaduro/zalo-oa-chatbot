@@ -9,6 +9,7 @@ import { ResolveChatDto } from './dto/resolve-chat.dto';
 import { CHAT_RESOLVE_SYSTEM_PROMPT, ChatRagCandidate, ChatRagContextService } from './rag/chat-rag-context.service';
 
 const RETRIEVAL_CANDIDATE_LIMIT = 5;
+const DECISION_MAX_OUTPUT_TOKENS = 96;
 const FULL_NAME_FIELD_NAMES = new Set(['họ tên', 'họ và tên']);
 const VIETNAMESE_NAME_PRONOUNS = new Set(['em', 'anh', 'chị', 'tôi', 'mình', 'bạn']);
 
@@ -92,6 +93,12 @@ export class ChatResolveService {
         llmMs: 0,
         serverValidationMs: 0,
         totalMs: this.elapsedMs(startedAt),
+        systemPromptChars: 0,
+        candidateCount: 0,
+        knowledgeItemCandidateCount: 0,
+        documentSectionCandidateCount: 0,
+        decisionContextChars: 0,
+        userPromptChars: 0,
       }, performanceContext);
 
       return result;
@@ -104,6 +111,11 @@ export class ChatResolveService {
     const rawDecision = await this.llmService.generateStructured({
       systemPrompt: this.getSystemPrompt(),
       userPrompt: context.userPrompt,
+      maxOutputTokens: DECISION_MAX_OUTPUT_TOKENS,
+      metadata: {
+        purpose: 'chat_resolve',
+        correlationId: performanceContext ? `${performanceContext.conversationId}:${performanceContext.inboundMessageId}` : undefined,
+      },
     });
     const llmMs = this.elapsedMs(llmStartedAt);
     const serverValidationStartedAt = performance.now();
@@ -170,6 +182,8 @@ export class ChatResolveService {
       llmMs,
       serverValidationMs: this.elapsedMs(serverValidationStartedAt),
       totalMs: this.elapsedMs(startedAt),
+      systemPromptChars: this.getSystemPrompt().length,
+      ...context.metrics,
     }, performanceContext);
 
     return result;
@@ -389,6 +403,12 @@ export class ChatResolveService {
       llmMs: number;
       serverValidationMs: number;
       totalMs: number;
+      systemPromptChars: number;
+      candidateCount: number;
+      knowledgeItemCandidateCount: number;
+      documentSectionCandidateCount: number;
+      decisionContextChars: number;
+      userPromptChars: number;
     },
     performanceContext?: ChatResolvePerformanceContext,
   ): void {
