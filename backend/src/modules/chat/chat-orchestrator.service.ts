@@ -11,6 +11,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 import { ChatResolveResult, ChatResolveService } from './chat-resolve.service';
 import { NormalizedChatMessageInput } from './dto/create-chat-message.dto';
+import { TaskFieldCollectionService } from './task-field-collection.service';
 
 interface SelectedKnowledgeRecord {
   knowledgeItemVersionId: string | null;
@@ -29,6 +30,7 @@ export interface ChatMessageResult {
   requiredFields: string[];
   collectedFields: Record<string, string>;
   missingFields: string[];
+  isContinuation?: boolean;
 }
 
 @Injectable()
@@ -36,10 +38,19 @@ export class ChatOrchestratorService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly chatResolveService: ChatResolveService,
+    private readonly taskFieldCollectionService: TaskFieldCollectionService,
   ) {}
 
   async handle(input: NormalizedChatMessageInput): Promise<ChatMessageResult> {
     const { conversation, inboundMessage } = await this.persistInboundMessage(input);
+
+    const continuation = await this.taskFieldCollectionService.tryContinue({
+      conversationId: conversation.id,
+      inboundMessageId: inboundMessage.id,
+      channel: input.channel,
+      message: input.message,
+    });
+    if (continuation) return continuation;
 
     // Retrieval and LLM execution deliberately happen after the inbound transaction commits.
     const resolution = await this.chatResolveService.resolve({

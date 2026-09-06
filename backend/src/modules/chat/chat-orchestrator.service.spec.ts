@@ -12,6 +12,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { ChatController } from './chat.controller';
 import { ChatOrchestratorService } from './chat-orchestrator.service';
 import { ChatResolveResult, ChatResolveService } from './chat-resolve.service';
+import { TaskFieldCollectionService } from './task-field-collection.service';
 
 const baseResolution = (overrides: Partial<ChatResolveResult> = {}): ChatResolveResult => ({
   resolutionType: ResolutionType.AUTO_RESPONSE,
@@ -77,12 +78,14 @@ const createHarness = (resolution = baseResolution()) => {
     knowledgeDocument: { findUnique: jest.fn().mockResolvedValue(null) },
   };
   const resolver = { resolve: jest.fn().mockResolvedValue(resolution) };
+  const taskFieldCollection = { tryContinue: jest.fn().mockResolvedValue(null) };
   const service = new ChatOrchestratorService(
     prisma as unknown as PrismaService,
     resolver as unknown as ChatResolveService,
+    taskFieldCollection as unknown as TaskFieldCollectionService,
   );
 
-  return { service, prisma, resolver, transaction };
+  return { service, prisma, resolver, taskFieldCollection, transaction };
 };
 
 describe('ChatOrchestratorService', () => {
@@ -130,6 +133,31 @@ describe('ChatOrchestratorService', () => {
 
     expect(transaction.conversation.create).toHaveBeenCalledTimes(1);
     expect(transaction.message.create.mock.calls[2][0].data.conversationId).toBe('conversation-1');
+  });
+
+  it('does not resolve or create a new task when field collection returns an explicit existing-task continuation', async () => {
+    const { service, resolver, taskFieldCollection, transaction } = createHarness();
+    taskFieldCollection.tryContinue.mockResolvedValue({
+      conversationId: 'conversation-1',
+      inboundMessageId: 'inbound-1',
+      outboundMessageId: 'outbound-continuation-1',
+      resolutionType: ResolutionType.OPERATOR_TASK,
+      selectedKnowledge: { type: 'KNOWLEDGE_ITEM', knowledgeCode: 'CHECK_NPP_SELECTION' },
+      response: 'Anh/chị cho em xin thêm Tên NPP để em kiểm tra nhé.',
+      operatorTask: { id: 'existing-task-1', status: OperatorTaskStatus.PENDING },
+      humanContactRequest: null,
+      requiredFields: ['Tên tài khoản', 'Tên NPP'],
+      collectedFields: { 'Tên tài khoản': 'nguyenvana' },
+      missingFields: ['Tên NPP'],
+      isContinuation: true,
+    });
+
+    await expect(service.handle(input)).resolves.toMatchObject({
+      operatorTask: { id: 'existing-task-1' },
+      isContinuation: true,
+    });
+    expect(resolver.resolve).not.toHaveBeenCalled();
+    expect(transaction.operatorTask.create).not.toHaveBeenCalled();
   });
 
   it('creates exactly one pending operator task with resolved metadata and an acknowledgement', async () => {
