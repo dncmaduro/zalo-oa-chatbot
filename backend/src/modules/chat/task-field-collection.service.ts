@@ -15,6 +15,7 @@ const ELIGIBLE_STATUSES: OperatorTaskStatus[] = [
 const NAME_FIELDS = new Set(['họ tên', 'họ và tên']);
 const NAME_PRONOUNS = new Set(['em', 'anh', 'chị', 'tôi', 'mình', 'bạn']);
 const CONTINUATION_DECISION_MAX_OUTPUT_TOKENS = 96;
+const ALL_FIELDS_COLLECTED_ACKNOWLEDGEMENT = 'Em đã nhận đủ thông tin. Bên em sẽ kiểm tra và phản hồi anh/chị sau nhé.';
 
 interface TaskInputData {
   requiredFields: string[];
@@ -258,7 +259,7 @@ export class TaskFieldCollectionService {
         where: { id: task.id },
         data: { inputData: updatedInput },
       });
-      const response = this.composeResponse(missingFields, task.knowledgeItemVersion?.acknowledgementMessage ?? null);
+      const response = this.composeResponse(missingFields);
       const outboundMessage = await transaction.message.create({
         data: {
           conversationId: params.conversationId,
@@ -337,9 +338,9 @@ export class TaskFieldCollectionService {
     return { ...input, requiredFields, collectedFields, missingFields };
   }
 
-  private composeResponse(missingFields: string[], acknowledgementMessage: string | null): string {
+  private composeResponse(missingFields: string[]): string {
     if (missingFields.length === 0) {
-      return acknowledgementMessage?.trim() || 'Em đã nhận đủ thông tin. Bên em sẽ kiểm tra và phản hồi anh/chị sau nhé.';
+      return ALL_FIELDS_COLLECTED_ACKNOWLEDGEMENT;
     }
     return `Anh/chị cho em xin thêm ${this.joinFields(missingFields)} để em kiểm tra nhé.`;
   }

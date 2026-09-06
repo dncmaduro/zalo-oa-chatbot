@@ -29,10 +29,12 @@ const createHarness = (tasks: any[] = [fieldTask()]) => {
   const transaction = {
     operatorTask: {
       findUnique: jest.fn().mockResolvedValue(tasks[0] ?? null),
-      update: jest.fn().mockImplementation(({ data }) => Promise.resolve({ id: 'task-a', status: OperatorTaskStatus.PENDING, ...data })),
+      create: jest.fn(),
+      update: jest.fn().mockImplementation(({ data }) => Promise.resolve({ id: 'task-a', status: tasks[0]?.status ?? OperatorTaskStatus.PENDING, ...data })),
     },
     message: { create: jest.fn().mockResolvedValue({ id: 'outbound-1', createdAt: new Date('2026-09-05T00:00:00.000Z') }) },
     operatorTaskEvent: { create: jest.fn().mockResolvedValue({ id: 'event-1' }) },
+    humanContactRequest: { create: jest.fn() },
     conversation: { update: jest.fn().mockResolvedValue({}) },
   };
   const prisma = {
@@ -92,17 +94,50 @@ describe('TaskFieldCollectionService', () => {
     );
   });
 
-  it('collects an explicitly labelled missing NPP when the LLM omits it', async () => {
-    const existing = fieldTask({ inputData: { requiredFields: ['Tên tài khoản', 'Tên NPP'], collectedFields: { 'Tên tài khoản': 'nguyenvana' }, missingFields: ['Tên NPP'] } });
-    const { service, llm } = createHarness([existing]);
-    llm.generateStructured.mockResolvedValue({ selectedTaskId: null, collectedFields: {} });
+  it.each([OperatorTaskStatus.PENDING, OperatorTaskStatus.ASSIGNED, OperatorTaskStatus.IN_PROGRESS])(
+    'acknowledges deterministic completion without reusing a field-requesting KB response or changing %s lifecycle state',
+    async (status) => {
+      const fieldRequestingInitialResponse = 'Anh/chị cho em xin Tên tài khoản và Tên NPP để em kiểm tra nhé.';
+      const existing = fieldTask({
+        status,
+        inputData: {
+          requiredFields: ['Tên tài khoản', 'Tên NPP'],
+          collectedFields: { 'Tên tài khoản': 'nguyenvana' },
+          missingFields: ['Tên NPP'],
+        },
+        knowledgeItemVersion: {
+          title: 'Kiểm tra NPP',
+          acknowledgementMessage: fieldRequestingInitialResponse,
+          initialResponse: fieldRequestingInitialResponse,
+          knowledgeItem: { code: 'CHECK_NPP_SELECTION' },
+        },
+      });
+      const { service, llm, transaction } = createHarness([existing]);
+      llm.generateStructured.mockResolvedValue({ selectedTaskId: null, collectedFields: {} });
 
-    await expect(service.tryContinue({ ...params, message: 'NPP Hải Phòng' })).resolves.toMatchObject({
-      collectedFields: { 'Tên tài khoản': 'nguyenvana', 'Tên NPP': 'Hải Phòng' },
-      missingFields: [],
-      response: 'Đã nhận đủ thông tin, bên em sẽ kiểm tra.',
-    });
-  });
+      await expect(service.tryContinue({ ...params, message: 'NPP Hải Phòng' })).resolves.toMatchObject({
+        operatorTask: { id: 'task-a', status },
+        collectedFields: { 'Tên tài khoản': 'nguyenvana', 'Tên NPP': 'Hải Phòng' },
+        missingFields: [],
+        response: 'Em đã nhận đủ thông tin. Bên em sẽ kiểm tra và phản hồi anh/chị sau nhé.',
+        humanContactRequest: null,
+      });
+      expect(transaction.message.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            content: 'Em đã nhận đủ thông tin. Bên em sẽ kiểm tra và phản hồi anh/chị sau nhé.',
+          }),
+        }),
+      );
+      expect(transaction.message.create.mock.calls[0][0].data.content).not.toBe(fieldRequestingInitialResponse);
+      expect(transaction.operatorTask.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.not.objectContaining({ status: expect.anything() }) }),
+      );
+      expect(transaction.operatorTask.create).not.toHaveBeenCalled();
+      expect(transaction.humanContactRequest.create).not.toHaveBeenCalled();
+      expect(llm.generateStructured).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it('allows explicit correction of a previously collected field', async () => {
     const existing = fieldTask({ inputData: { requiredFields: ['Tên NPP', 'Tên tài khoản'], collectedFields: { 'Tên NPP': 'Hà Nội' }, missingFields: ['Tên tài khoản'] } });
