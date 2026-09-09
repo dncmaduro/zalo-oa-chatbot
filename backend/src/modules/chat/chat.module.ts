@@ -13,5 +13,6 @@ import { TaskFieldCollectionService } from './task-field-collection.service';
   imports: [KnowledgeModule, LlmModule],
   controllers: [ChatController],
   providers: [ChatResolveService, ChatOrchestratorService, ChatRagContextService, TaskFieldCollectionService],
+  exports: [ChatOrchestratorService],
 })
 export class ChatModule {}

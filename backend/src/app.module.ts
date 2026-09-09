@@ -12,6 +12,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { OperatorModule } from './modules/operators/operator.module';
 import { HumanContactModule } from './modules/human-contacts/human-contact.module';
 import { LocalAiWarmupModule } from './modules/local-ai-warmup/local-ai-warmup.module';
+import { ZaloModule } from './modules/zalo/zalo.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { LocalAiWarmupModule } from './modules/local-ai-warmup/local-ai-warmup.m
     OperatorModule,
     HumanContactModule,
     LocalAiWarmupModule,
+    ZaloModule,
   ],
   controllers: [AppController],
   providers: [AppService],

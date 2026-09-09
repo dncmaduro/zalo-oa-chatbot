@@ -101,6 +101,21 @@ enum MessageDeliveryStatus {
   FAILED
 }
 
+enum ZaloWebhookEventStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  IGNORED
+  FAILED
+}
+
+enum ZaloOutboundDeliveryStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+}
+
 enum OperatorRoleCode {
   ADMIN
   LEADER
@@ -588,11 +603,51 @@ model Message {
   knowledgeItemRefs    MessageKnowledgeItemRef[]
   knowledgeSectionRefs MessageKnowledgeSectionRef[]
   taskResponse         OperatorTaskResponse?
+  zaloOutboundDelivery ZaloOutboundDelivery?
 
   @@unique([channel, externalMessageId])
   @@index([conversationId, createdAt])
   @@index([deliveryStatus])
   @@map("messages")
+}
+
+model ZaloWebhookEvent {
+  id                String                 @id @default(uuid()) @db.Uuid
+  externalEventKey  String                 @unique @map("external_event_key")
+  eventName         String                 @map("event_name")
+  externalMessageId String?                @map("external_message_id")
+  externalUserId    String?                @map("external_user_id")
+  oaId              String?                @map("oa_id")
+  payload           Json
+  status            ZaloWebhookEventStatus @default(PENDING)
+  attempts          Int                    @default(0)
+  lastError         String?                @map("last_error") @db.Text
+  outboundMessageId String?                @map("outbound_message_id") @db.Uuid
+  receivedAt        DateTime               @default(now()) @map("received_at") @db.Timestamptz(3)
+  processedAt       DateTime?              @map("processed_at") @db.Timestamptz(3)
+  createdAt         DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([status, receivedAt])
+  @@map("zalo_webhook_events")
+}
+
+model ZaloOutboundDelivery {
+  id                String                   @id @default(uuid()) @db.Uuid
+  messageId         String                   @unique @map("message_id") @db.Uuid
+  externalRecipientId String                 @map("external_recipient_id")
+  status            ZaloOutboundDeliveryStatus @default(PENDING)
+  attempts          Int                      @default(0)
+  externalMessageId String?                  @map("external_message_id")
+  lastError         String?                  @map("last_error") @db.Text
+  sentAt            DateTime?                @map("sent_at") @db.Timestamptz(3)
+  createdAt         DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@map("zalo_outbound_deliveries")
 }
 
 model MessageKnowledgeItemRef {
