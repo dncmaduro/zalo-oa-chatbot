@@ -62,6 +62,7 @@ export class TaskFieldCollectionService {
     inboundMessageId: string;
     channel: ChatChannel;
     message: string;
+    ingressId?: string;
   }): Promise<TaskContinuationResult | null> {
     const startedAt = performance.now();
     const lookupStartedAt = performance.now();
@@ -235,10 +236,16 @@ export class TaskFieldCollectionService {
     conversationId: string;
     inboundMessageId: string;
     channel: ChatChannel;
+    ingressId?: string;
     selectedTaskId: string;
     collectedFields: Record<string, string>;
   }): Promise<TaskContinuationResult> {
     return this.prisma.$transaction(async (transaction) => {
+      if (params.ingressId) {
+        await transaction.$queryRaw`SELECT id FROM chat_ingresses WHERE id = ${params.ingressId}::uuid FOR UPDATE`;
+        const ingress = await transaction.chatIngress.findUniqueOrThrow({ where: { id: params.ingressId } });
+        if (ingress.result) return ingress.result as unknown as TaskContinuationResult;
+      }
       const task = await transaction.operatorTask.findUnique({
         where: { id: params.selectedTaskId },
         include: {
@@ -283,7 +290,7 @@ export class TaskFieldCollectionService {
         data: { lastMessageAt: outboundMessage.createdAt },
       });
 
-      return {
+      const result: TaskContinuationResult = {
         conversationId: params.conversationId,
         inboundMessageId: params.inboundMessageId,
         outboundMessageId: outboundMessage.id,
@@ -299,6 +306,10 @@ export class TaskFieldCollectionService {
         missingFields,
         isContinuation: true,
       };
+      if (params.ingressId) {
+        await transaction.chatIngress.update({ where: { id: params.ingressId }, data: { outboundMessageId: outboundMessage.id, result: JSON.parse(JSON.stringify(result)) } });
+      }
+      return result;
     });
   }
 

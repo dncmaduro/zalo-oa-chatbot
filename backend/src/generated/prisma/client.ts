@@ -138,6 +138,11 @@ export type Message = Prisma.MessageModel;
  */
 export type ZaloWebhookEvent = Prisma.ZaloWebhookEventModel;
 /**
+ * Model ChatIngress
+ *
+ */
+export type ChatIngress = Prisma.ChatIngressModel;
+/**
  * Model ZaloOutboundDelivery
  *
  */

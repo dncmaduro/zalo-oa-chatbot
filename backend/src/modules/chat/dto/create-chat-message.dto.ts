@@ -14,6 +14,7 @@ export interface NormalizedChatMessageInput {
   channel: ChatChannel;
   message: string;
   audience: KnowledgeAudience;
+  idempotencyKey?: string;
 }
 
 export function normalizeChatMessageInput(input: CreateChatMessageDto): NormalizedChatMessageInput {

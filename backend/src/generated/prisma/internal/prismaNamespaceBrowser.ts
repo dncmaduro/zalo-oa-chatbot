@@ -67,6 +67,7 @@ export const ModelName = {
   ConversationResolution: 'ConversationResolution',
   Message: 'Message',
   ZaloWebhookEvent: 'ZaloWebhookEvent',
+  ChatIngress: 'ChatIngress',
   ZaloOutboundDelivery: 'ZaloOutboundDelivery',
   MessageKnowledgeItemRef: 'MessageKnowledgeItemRef',
   MessageKnowledgeSectionRef: 'MessageKnowledgeSectionRef',
@@ -378,6 +379,7 @@ export const ZaloWebhookEventScalarFieldEnum = {
   payload: 'payload',
   status: 'status',
   attempts: 'attempts',
+  processingStartedAt: 'processingStartedAt',
   lastError: 'lastError',
   outboundMessageId: 'outboundMessageId',
   receivedAt: 'receivedAt',
@@ -388,6 +390,20 @@ export const ZaloWebhookEventScalarFieldEnum = {
 
 export type ZaloWebhookEventScalarFieldEnum =
   (typeof ZaloWebhookEventScalarFieldEnum)[keyof typeof ZaloWebhookEventScalarFieldEnum];
+
+export const ChatIngressScalarFieldEnum = {
+  id: 'id',
+  source: 'source',
+  idempotencyKey: 'idempotencyKey',
+  conversationId: 'conversationId',
+  inboundMessageId: 'inboundMessageId',
+  outboundMessageId: 'outboundMessageId',
+  result: 'result',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+} as const;
+
+export type ChatIngressScalarFieldEnum = (typeof ChatIngressScalarFieldEnum)[keyof typeof ChatIngressScalarFieldEnum];
 
 export const ZaloOutboundDeliveryScalarFieldEnum = {
   id: 'id',

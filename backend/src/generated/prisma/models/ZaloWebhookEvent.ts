@@ -42,6 +42,7 @@ export type ZaloWebhookEventMinAggregateOutputType = {
   oaId: string | null;
   status: $Enums.ZaloWebhookEventStatus | null;
   attempts: number | null;
+  processingStartedAt: Date | null;
   lastError: string | null;
   outboundMessageId: string | null;
   receivedAt: Date | null;
@@ -59,6 +60,7 @@ export type ZaloWebhookEventMaxAggregateOutputType = {
   oaId: string | null;
   status: $Enums.ZaloWebhookEventStatus | null;
   attempts: number | null;
+  processingStartedAt: Date | null;
   lastError: string | null;
   outboundMessageId: string | null;
   receivedAt: Date | null;
@@ -77,6 +79,7 @@ export type ZaloWebhookEventCountAggregateOutputType = {
   payload: number;
   status: number;
   attempts: number;
+  processingStartedAt: number;
   lastError: number;
   outboundMessageId: number;
   receivedAt: number;
@@ -103,6 +106,7 @@ export type ZaloWebhookEventMinAggregateInputType = {
   oaId?: true;
   status?: true;
   attempts?: true;
+  processingStartedAt?: true;
   lastError?: true;
   outboundMessageId?: true;
   receivedAt?: true;
@@ -120,6 +124,7 @@ export type ZaloWebhookEventMaxAggregateInputType = {
   oaId?: true;
   status?: true;
   attempts?: true;
+  processingStartedAt?: true;
   lastError?: true;
   outboundMessageId?: true;
   receivedAt?: true;
@@ -138,6 +143,7 @@ export type ZaloWebhookEventCountAggregateInputType = {
   payload?: true;
   status?: true;
   attempts?: true;
+  processingStartedAt?: true;
   lastError?: true;
   outboundMessageId?: true;
   receivedAt?: true;
@@ -244,6 +250,7 @@ export type ZaloWebhookEventGroupByOutputType = {
   payload: runtime.JsonValue;
   status: $Enums.ZaloWebhookEventStatus;
   attempts: number;
+  processingStartedAt: Date | null;
   lastError: string | null;
   outboundMessageId: string | null;
   receivedAt: Date;
@@ -282,6 +289,7 @@ export type ZaloWebhookEventWhereInput = {
   payload?: Prisma.JsonFilter<'ZaloWebhookEvent'>;
   status?: Prisma.EnumZaloWebhookEventStatusFilter<'ZaloWebhookEvent'> | $Enums.ZaloWebhookEventStatus;
   attempts?: Prisma.IntFilter<'ZaloWebhookEvent'> | number;
+  processingStartedAt?: Prisma.DateTimeNullableFilter<'ZaloWebhookEvent'> | Date | string | null;
   lastError?: Prisma.StringNullableFilter<'ZaloWebhookEvent'> | string | null;
   outboundMessageId?: Prisma.UuidNullableFilter<'ZaloWebhookEvent'> | string | null;
   receivedAt?: Prisma.DateTimeFilter<'ZaloWebhookEvent'> | Date | string;
@@ -300,6 +308,7 @@ export type ZaloWebhookEventOrderByWithRelationInput = {
   payload?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
   attempts?: Prisma.SortOrder;
+  processingStartedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
   lastError?: Prisma.SortOrderInput | Prisma.SortOrder;
   outboundMessageId?: Prisma.SortOrderInput | Prisma.SortOrder;
   receivedAt?: Prisma.SortOrder;
@@ -322,6 +331,7 @@ export type ZaloWebhookEventWhereUniqueInput = Prisma.AtLeast<
     payload?: Prisma.JsonFilter<'ZaloWebhookEvent'>;
     status?: Prisma.EnumZaloWebhookEventStatusFilter<'ZaloWebhookEvent'> | $Enums.ZaloWebhookEventStatus;
     attempts?: Prisma.IntFilter<'ZaloWebhookEvent'> | number;
+    processingStartedAt?: Prisma.DateTimeNullableFilter<'ZaloWebhookEvent'> | Date | string | null;
     lastError?: Prisma.StringNullableFilter<'ZaloWebhookEvent'> | string | null;
     outboundMessageId?: Prisma.UuidNullableFilter<'ZaloWebhookEvent'> | string | null;
     receivedAt?: Prisma.DateTimeFilter<'ZaloWebhookEvent'> | Date | string;
@@ -342,6 +352,7 @@ export type ZaloWebhookEventOrderByWithAggregationInput = {
   payload?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
   attempts?: Prisma.SortOrder;
+  processingStartedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
   lastError?: Prisma.SortOrderInput | Prisma.SortOrder;
   outboundMessageId?: Prisma.SortOrderInput | Prisma.SortOrder;
   receivedAt?: Prisma.SortOrder;
@@ -368,6 +379,7 @@ export type ZaloWebhookEventScalarWhereWithAggregatesInput = {
   payload?: Prisma.JsonWithAggregatesFilter<'ZaloWebhookEvent'>;
   status?: Prisma.EnumZaloWebhookEventStatusWithAggregatesFilter<'ZaloWebhookEvent'> | $Enums.ZaloWebhookEventStatus;
   attempts?: Prisma.IntWithAggregatesFilter<'ZaloWebhookEvent'> | number;
+  processingStartedAt?: Prisma.DateTimeNullableWithAggregatesFilter<'ZaloWebhookEvent'> | Date | string | null;
   lastError?: Prisma.StringNullableWithAggregatesFilter<'ZaloWebhookEvent'> | string | null;
   outboundMessageId?: Prisma.UuidNullableWithAggregatesFilter<'ZaloWebhookEvent'> | string | null;
   receivedAt?: Prisma.DateTimeWithAggregatesFilter<'ZaloWebhookEvent'> | Date | string;
@@ -386,6 +398,7 @@ export type ZaloWebhookEventCreateInput = {
   payload: Prisma.JsonNullValueInput | runtime.InputJsonValue;
   status?: $Enums.ZaloWebhookEventStatus;
   attempts?: number;
+  processingStartedAt?: Date | string | null;
   lastError?: string | null;
   outboundMessageId?: string | null;
   receivedAt?: Date | string;
@@ -404,6 +417,7 @@ export type ZaloWebhookEventUncheckedCreateInput = {
   payload: Prisma.JsonNullValueInput | runtime.InputJsonValue;
   status?: $Enums.ZaloWebhookEventStatus;
   attempts?: number;
+  processingStartedAt?: Date | string | null;
   lastError?: string | null;
   outboundMessageId?: string | null;
   receivedAt?: Date | string;
@@ -422,6 +436,7 @@ export type ZaloWebhookEventUpdateInput = {
   payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
   status?: Prisma.EnumZaloWebhookEventStatusFieldUpdateOperationsInput | $Enums.ZaloWebhookEventStatus;
   attempts?: Prisma.IntFieldUpdateOperationsInput | number;
+  processingStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   outboundMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   receivedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -440,6 +455,7 @@ export type ZaloWebhookEventUncheckedUpdateInput = {
   payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
   status?: Prisma.EnumZaloWebhookEventStatusFieldUpdateOperationsInput | $Enums.ZaloWebhookEventStatus;
   attempts?: Prisma.IntFieldUpdateOperationsInput | number;
+  processingStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   outboundMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   receivedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -458,6 +474,7 @@ export type ZaloWebhookEventCreateManyInput = {
   payload: Prisma.JsonNullValueInput | runtime.InputJsonValue;
   status?: $Enums.ZaloWebhookEventStatus;
   attempts?: number;
+  processingStartedAt?: Date | string | null;
   lastError?: string | null;
   outboundMessageId?: string | null;
   receivedAt?: Date | string;
@@ -476,6 +493,7 @@ export type ZaloWebhookEventUpdateManyMutationInput = {
   payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
   status?: Prisma.EnumZaloWebhookEventStatusFieldUpdateOperationsInput | $Enums.ZaloWebhookEventStatus;
   attempts?: Prisma.IntFieldUpdateOperationsInput | number;
+  processingStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   outboundMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   receivedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -494,6 +512,7 @@ export type ZaloWebhookEventUncheckedUpdateManyInput = {
   payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
   status?: Prisma.EnumZaloWebhookEventStatusFieldUpdateOperationsInput | $Enums.ZaloWebhookEventStatus;
   attempts?: Prisma.IntFieldUpdateOperationsInput | number;
+  processingStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   outboundMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   receivedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -512,6 +531,7 @@ export type ZaloWebhookEventCountOrderByAggregateInput = {
   payload?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
   attempts?: Prisma.SortOrder;
+  processingStartedAt?: Prisma.SortOrder;
   lastError?: Prisma.SortOrder;
   outboundMessageId?: Prisma.SortOrder;
   receivedAt?: Prisma.SortOrder;
@@ -533,6 +553,7 @@ export type ZaloWebhookEventMaxOrderByAggregateInput = {
   oaId?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
   attempts?: Prisma.SortOrder;
+  processingStartedAt?: Prisma.SortOrder;
   lastError?: Prisma.SortOrder;
   outboundMessageId?: Prisma.SortOrder;
   receivedAt?: Prisma.SortOrder;
@@ -550,6 +571,7 @@ export type ZaloWebhookEventMinOrderByAggregateInput = {
   oaId?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
   attempts?: Prisma.SortOrder;
+  processingStartedAt?: Prisma.SortOrder;
   lastError?: Prisma.SortOrder;
   outboundMessageId?: Prisma.SortOrder;
   receivedAt?: Prisma.SortOrder;
@@ -579,6 +601,7 @@ export type ZaloWebhookEventSelect<
     payload?: boolean;
     status?: boolean;
     attempts?: boolean;
+    processingStartedAt?: boolean;
     lastError?: boolean;
     outboundMessageId?: boolean;
     receivedAt?: boolean;
@@ -602,6 +625,7 @@ export type ZaloWebhookEventSelectCreateManyAndReturn<
     payload?: boolean;
     status?: boolean;
     attempts?: boolean;
+    processingStartedAt?: boolean;
     lastError?: boolean;
     outboundMessageId?: boolean;
     receivedAt?: boolean;
@@ -625,6 +649,7 @@ export type ZaloWebhookEventSelectUpdateManyAndReturn<
     payload?: boolean;
     status?: boolean;
     attempts?: boolean;
+    processingStartedAt?: boolean;
     lastError?: boolean;
     outboundMessageId?: boolean;
     receivedAt?: boolean;
@@ -645,6 +670,7 @@ export type ZaloWebhookEventSelectScalar = {
   payload?: boolean;
   status?: boolean;
   attempts?: boolean;
+  processingStartedAt?: boolean;
   lastError?: boolean;
   outboundMessageId?: boolean;
   receivedAt?: boolean;
@@ -665,6 +691,7 @@ export type ZaloWebhookEventOmit<
   | 'payload'
   | 'status'
   | 'attempts'
+  | 'processingStartedAt'
   | 'lastError'
   | 'outboundMessageId'
   | 'receivedAt'
@@ -690,6 +717,7 @@ export type $ZaloWebhookEventPayload<
       payload: runtime.JsonValue;
       status: $Enums.ZaloWebhookEventStatus;
       attempts: number;
+      processingStartedAt: Date | null;
       lastError: string | null;
       outboundMessageId: string | null;
       receivedAt: Date;
@@ -1221,6 +1249,7 @@ export interface ZaloWebhookEventFieldRefs {
   readonly payload: Prisma.FieldRef<'ZaloWebhookEvent', 'Json'>;
   readonly status: Prisma.FieldRef<'ZaloWebhookEvent', 'ZaloWebhookEventStatus'>;
   readonly attempts: Prisma.FieldRef<'ZaloWebhookEvent', 'Int'>;
+  readonly processingStartedAt: Prisma.FieldRef<'ZaloWebhookEvent', 'DateTime'>;
   readonly lastError: Prisma.FieldRef<'ZaloWebhookEvent', 'String'>;
   readonly outboundMessageId: Prisma.FieldRef<'ZaloWebhookEvent', 'String'>;
   readonly receivedAt: Prisma.FieldRef<'ZaloWebhookEvent', 'DateTime'>;

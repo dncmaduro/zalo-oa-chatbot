@@ -621,6 +621,7 @@ model ZaloWebhookEvent {
   payload           Json
   status            ZaloWebhookEventStatus @default(PENDING)
   attempts          Int                    @default(0)
+  processingStartedAt DateTime?            @map("processing_started_at") @db.Timestamptz(3)
   lastError         String?                @map("last_error") @db.Text
   outboundMessageId String?                @map("outbound_message_id") @db.Uuid
   receivedAt        DateTime               @default(now()) @map("received_at") @db.Timestamptz(3)
@@ -630,6 +631,22 @@ model ZaloWebhookEvent {
 
   @@index([status, receivedAt])
   @@map("zalo_webhook_events")
+}
+
+model ChatIngress {
+  id             String      @id @default(uuid()) @db.Uuid
+  source         String
+  idempotencyKey String      @map("idempotency_key")
+  conversationId String?     @map("conversation_id") @db.Uuid
+  inboundMessageId String?   @map("inbound_message_id") @db.Uuid
+  outboundMessageId String?  @map("outbound_message_id") @db.Uuid
+  result          Json?
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([source, idempotencyKey])
+  @@index([inboundMessageId])
+  @@map("chat_ingresses")
 }
 
 model ZaloOutboundDelivery {

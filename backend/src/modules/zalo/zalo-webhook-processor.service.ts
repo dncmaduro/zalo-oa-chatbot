@@ -5,6 +5,7 @@ import { ChatOrchestratorService } from '../chat/chat-orchestrator.service';
 import { ZaloOaClientService, ZaloPermanentError } from './zalo-oa-client.service';
 
 const MAX_ATTEMPTS = 3;
+const STALE_PROCESSING_MS = 300_000;
 @Injectable()
 export class ZaloWebhookProcessorService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ZaloWebhookProcessorService.name);
@@ -15,13 +16,25 @@ export class ZaloWebhookProcessorService implements OnModuleInit, OnModuleDestro
   async drain(): Promise<void> { await this.processPending(); await this.deliverPending(); }
 
   async processPending(): Promise<void> {
-    const event = await this.prisma.zaloWebhookEvent.findFirst({ where: { status: ZaloWebhookEventStatus.PENDING, attempts: { lt: MAX_ATTEMPTS } }, orderBy: { receivedAt: 'asc' } });
+    const staleBefore = new Date(Date.now() - STALE_PROCESSING_MS);
+    // Do not leave exhausted work looking retryable forever.  This update is
+    // intentionally outside the claim transaction: it is a short, idempotent
+    // state transition and prevents a stale PROCESSING row from becoming a
+    // hot loop after the bounded retry budget is consumed.
+    await this.prisma.zaloWebhookEvent.updateMany({
+      where: {
+        attempts: { gte: MAX_ATTEMPTS },
+        status: { in: [ZaloWebhookEventStatus.PENDING, ZaloWebhookEventStatus.PROCESSING] },
+      },
+      data: { status: ZaloWebhookEventStatus.FAILED },
+    });
+    const event = await this.prisma.zaloWebhookEvent.findFirst({ where: { attempts: { lt: MAX_ATTEMPTS }, OR: [{ status: ZaloWebhookEventStatus.PENDING }, { status: ZaloWebhookEventStatus.PROCESSING, processingStartedAt: { lt: staleBefore } }] }, orderBy: { receivedAt: 'asc' } });
     if (!event) return;
-    const claimed = await this.prisma.zaloWebhookEvent.updateMany({ where: { id: event.id, status: ZaloWebhookEventStatus.PENDING }, data: { status: ZaloWebhookEventStatus.PROCESSING, attempts: { increment: 1 } } });
+    const claimed = await this.prisma.zaloWebhookEvent.updateMany({ where: { id: event.id, status: event.status, updatedAt: event.updatedAt }, data: { status: ZaloWebhookEventStatus.PROCESSING, processingStartedAt: new Date(), attempts: { increment: 1 } } });
     if (!claimed.count) return;
     const payload = event.payload as any;
     try {
-      const result = await this.chat.handle({ channel: ChatChannel.ZALO, externalUserId: event.externalUserId!, message: payload.message.text, audience: this.audience() });
+      const result = await this.chat.handle({ channel: ChatChannel.ZALO, externalUserId: event.externalUserId!, message: payload.message.text, audience: this.audience(), idempotencyKey: event.externalEventKey });
       await this.prisma.$transaction(async (tx) => {
         await tx.zaloOutboundDelivery.upsert({ where: { messageId: result.outboundMessageId }, create: { messageId: result.outboundMessageId, externalRecipientId: event.externalUserId! }, update: {} });
         await tx.zaloWebhookEvent.update({ where: { id: event.id }, data: { status: ZaloWebhookEventStatus.PROCESSED, outboundMessageId: result.outboundMessageId, processedAt: new Date(), lastError: null } });

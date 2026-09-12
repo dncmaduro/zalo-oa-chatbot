@@ -45,9 +45,19 @@ export class ChatOrchestratorService {
   ) {}
 
   async handle(input: NormalizedChatMessageInput): Promise<ChatMessageResult> {
+    const ingress = input.idempotencyKey ? await this.getOrCreateIngress(input.idempotencyKey) : null;
+    if (ingress?.result) return ingress.result as unknown as ChatMessageResult;
     const startedAt = performance.now();
     const inboundPersistenceStartedAt = performance.now();
-    const { conversation, inboundMessage } = await this.persistInboundMessage(input);
+    let conversation: { id: string };
+    let inboundMessage: { id: string };
+    if (ingress?.inboundMessageId) {
+      const persisted = await this.prisma.message.findUniqueOrThrow({ where: { id: ingress.inboundMessageId }, include: { conversation: true } });
+      conversation = persisted.conversation;
+      inboundMessage = persisted;
+    } else {
+      ({ conversation, inboundMessage } = await this.persistInboundMessage(input, ingress?.id));
+    }
     const inboundPersistenceMs = this.elapsedMs(inboundPersistenceStartedAt);
 
     const continuationStartedAt = performance.now();
@@ -56,6 +66,7 @@ export class ChatOrchestratorService {
       inboundMessageId: inboundMessage.id,
       channel: input.channel,
       message: input.message,
+      ingressId: ingress?.id,
     });
     const continuationMs = this.elapsedMs(continuationStartedAt);
     if (continuation) {
@@ -88,6 +99,7 @@ export class ChatOrchestratorService {
       inboundMessageId: inboundMessage.id,
       resolution,
       selectedKnowledge,
+      ingressId: ingress?.id,
     });
     this.logPerformance({
       conversationId: conversation.id,
@@ -102,8 +114,31 @@ export class ChatOrchestratorService {
     return result;
   }
 
-  private async persistInboundMessage(input: NormalizedChatMessageInput) {
+  private async getOrCreateIngress(idempotencyKey: string) {
+    try { return await this.prisma.chatIngress.create({ data: { source: 'ZALO', idempotencyKey } }); }
+    catch (error: any) {
+      if (error?.code !== 'P2002') throw error;
+      return this.prisma.chatIngress.findUniqueOrThrow({ where: { source_idempotencyKey: { source: 'ZALO', idempotencyKey } } });
+    }
+  }
+
+  private async persistInboundMessage(input: NormalizedChatMessageInput, ingressId?: string) {
     return this.prisma.$transaction(async (transaction) => {
+      // The ingress row is the serialization point for a retried/concurrent
+      // external message.  Do this before creating a user, conversation, or
+      // inbound message: two workers may both have observed an empty ingress
+      // outside this transaction.
+      if (ingressId) {
+        await transaction.$queryRaw`SELECT id FROM chat_ingresses WHERE id = ${ingressId}::uuid FOR UPDATE`;
+        const ingress = await transaction.chatIngress.findUniqueOrThrow({ where: { id: ingressId } });
+        if (ingress.inboundMessageId) {
+          const inboundMessage = await transaction.message.findUniqueOrThrow({
+            where: { id: ingress.inboundMessageId },
+            include: { conversation: true },
+          });
+          return { conversation: inboundMessage.conversation, inboundMessage };
+        }
+      }
       const chatUser = await transaction.chatUser.upsert({
         where: {
           channel_externalUserId: {
@@ -149,6 +184,7 @@ export class ChatOrchestratorService {
         where: { id: conversation.id },
         data: { lastMessageAt: inboundMessage.createdAt },
       });
+      if (ingressId) await transaction.chatIngress.update({ where: { id: ingressId }, data: { conversationId: conversation.id, inboundMessageId: inboundMessage.id } });
 
       return { conversation, inboundMessage };
     });
@@ -212,10 +248,16 @@ export class ChatOrchestratorService {
     inboundMessageId: string;
     resolution: ChatResolveResult;
     selectedKnowledge: SelectedKnowledgeRecord;
+    ingressId?: string;
   }): Promise<ChatMessageResult> {
-    const { input, conversationId, inboundMessageId, resolution, selectedKnowledge } = params;
+    const { input, conversationId, inboundMessageId, resolution, selectedKnowledge, ingressId } = params;
 
     return this.prisma.$transaction(async (transaction) => {
+      if (ingressId) {
+        await transaction.$queryRaw`SELECT id FROM chat_ingresses WHERE id = ${ingressId}::uuid FOR UPDATE`;
+        const ingress = await transaction.chatIngress.findUniqueOrThrow({ where: { id: ingressId } });
+        if (ingress.result) return ingress.result as unknown as ChatMessageResult;
+      }
       const conversationResolution = await transaction.conversationResolution.create({
         data: {
           conversationId,
@@ -305,7 +347,7 @@ export class ChatOrchestratorService {
         data: { lastMessageAt: outboundMessage.createdAt },
       });
 
-      return {
+      const result = {
         conversationId,
         inboundMessageId,
         outboundMessageId: outboundMessage.id,
@@ -318,6 +360,8 @@ export class ChatOrchestratorService {
         collectedFields: resolution.collectedFields,
         missingFields: resolution.missingFields,
       };
+      if (ingressId) await transaction.chatIngress.update({ where: { id: ingressId }, data: { outboundMessageId: outboundMessage.id, result } });
+      return result;
     });
   }
 }

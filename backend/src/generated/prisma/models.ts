@@ -26,6 +26,7 @@ export type * from './models/Conversation';
 export type * from './models/ConversationResolution';
 export type * from './models/Message';
 export type * from './models/ZaloWebhookEvent';
+export type * from './models/ChatIngress';
 export type * from './models/ZaloOutboundDelivery';
 export type * from './models/MessageKnowledgeItemRef';
 export type * from './models/MessageKnowledgeSectionRef';

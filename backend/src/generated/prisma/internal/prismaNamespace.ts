@@ -398,6 +398,7 @@ export const ModelName = {
   ConversationResolution: 'ConversationResolution',
   Message: 'Message',
   ZaloWebhookEvent: 'ZaloWebhookEvent',
+  ChatIngress: 'ChatIngress',
   ZaloOutboundDelivery: 'ZaloOutboundDelivery',
   MessageKnowledgeItemRef: 'MessageKnowledgeItemRef',
   MessageKnowledgeSectionRef: 'MessageKnowledgeSectionRef',
@@ -462,6 +463,7 @@ export type TypeMap<
       | 'conversationResolution'
       | 'message'
       | 'zaloWebhookEvent'
+      | 'chatIngress'
       | 'zaloOutboundDelivery'
       | 'messageKnowledgeItemRef'
       | 'messageKnowledgeSectionRef'
@@ -1893,6 +1895,80 @@ export type TypeMap<
         count: {
           args: Prisma.ZaloWebhookEventCountArgs<ExtArgs>;
           result: runtime.Types.Utils.Optional<Prisma.ZaloWebhookEventCountAggregateOutputType> | number;
+        };
+      };
+    };
+    ChatIngress: {
+      payload: Prisma.$ChatIngressPayload<ExtArgs>;
+      fields: Prisma.ChatIngressFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.ChatIngressFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatIngressPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.ChatIngressFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatIngressPayload>;
+        };
+        findFirst: {
+          args: Prisma.ChatIngressFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatIngressPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.ChatIngressFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatIngressPayload>;
+        };
+        findMany: {
+          args: Prisma.ChatIngressFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatIngressPayload>[];
+        };
+        create: {
+          args: Prisma.ChatIngressCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatIngressPayload>;
+        };
+        createMany: {
+          args: Prisma.ChatIngressCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.ChatIngressCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatIngressPayload>[];
+        };
+        delete: {
+          args: Prisma.ChatIngressDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatIngressPayload>;
+        };
+        update: {
+          args: Prisma.ChatIngressUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatIngressPayload>;
+        };
+        deleteMany: {
+          args: Prisma.ChatIngressDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.ChatIngressUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.ChatIngressUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatIngressPayload>[];
+        };
+        upsert: {
+          args: Prisma.ChatIngressUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatIngressPayload>;
+        };
+        aggregate: {
+          args: Prisma.ChatIngressAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateChatIngress>;
+        };
+        groupBy: {
+          args: Prisma.ChatIngressGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.ChatIngressGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.ChatIngressCountArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.ChatIngressCountAggregateOutputType> | number;
         };
       };
     };
@@ -4054,6 +4130,7 @@ export const ZaloWebhookEventScalarFieldEnum = {
   payload: 'payload',
   status: 'status',
   attempts: 'attempts',
+  processingStartedAt: 'processingStartedAt',
   lastError: 'lastError',
   outboundMessageId: 'outboundMessageId',
   receivedAt: 'receivedAt',
@@ -4064,6 +4141,20 @@ export const ZaloWebhookEventScalarFieldEnum = {
 
 export type ZaloWebhookEventScalarFieldEnum =
   (typeof ZaloWebhookEventScalarFieldEnum)[keyof typeof ZaloWebhookEventScalarFieldEnum];
+
+export const ChatIngressScalarFieldEnum = {
+  id: 'id',
+  source: 'source',
+  idempotencyKey: 'idempotencyKey',
+  conversationId: 'conversationId',
+  inboundMessageId: 'inboundMessageId',
+  outboundMessageId: 'outboundMessageId',
+  result: 'result',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+} as const;
+
+export type ChatIngressScalarFieldEnum = (typeof ChatIngressScalarFieldEnum)[keyof typeof ChatIngressScalarFieldEnum];
 
 export const ZaloOutboundDeliveryScalarFieldEnum = {
   id: 'id',
@@ -5036,6 +5127,7 @@ export type GlobalOmitConfig = {
   conversationResolution?: Prisma.ConversationResolutionOmit;
   message?: Prisma.MessageOmit;
   zaloWebhookEvent?: Prisma.ZaloWebhookEventOmit;
+  chatIngress?: Prisma.ChatIngressOmit;
   zaloOutboundDelivery?: Prisma.ZaloOutboundDeliveryOmit;
   messageKnowledgeItemRef?: Prisma.MessageKnowledgeItemRefOmit;
   messageKnowledgeSectionRef?: Prisma.MessageKnowledgeSectionRefOmit;
