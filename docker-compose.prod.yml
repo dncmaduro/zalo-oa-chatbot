@@ -1,0 +1,67 @@
+name: zalo-oa-chatbot
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    command:
+      - postgres
+      - -c
+      - shared_buffers=128MB
+      - -c
+      - effective_cache_size=512MB
+      - -c
+      - work_mem=4MB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - max_connections=30
+
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+    networks:
+      - internal
+
+  backend:
+    image: ${BACKEND_IMAGE:-ghcr.io/dncmaduro/zalo-oa-chatbot:latest}
+    restart: unless-stopped
+
+    env_file:
+      - /opt/zalo-oa-chatbot/prod.env
+
+    ports:
+      - '127.0.0.1:3000:3000'
+
+    volumes:
+      - import_data:/app/storage/imports
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - internal
+
+volumes:
+  postgres_data:
+    name: zalo-oa-chatbot-postgres-data
+
+  import_data:
+    name: zalo-oa-chatbot-import-data
+
+networks:
+  internal:
+    name: zalo-oa-chatbot-internal
