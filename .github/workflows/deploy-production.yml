@@ -120,6 +120,14 @@ jobs:
             run --rm backend \
             yarn prisma migrate deploy
 
+      - name: Seed RBAC
+        run: |
+          docker compose \
+            --env-file /opt/zalo-oa-chatbot/prod.env \
+            -f docker-compose.prod.yml \
+            run --rm backend \
+            yarn seed
+
       - name: Deploy backend
         run: |
           docker compose \
