@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 
+import { AuthModule } from '../auth/auth.module';
+
 import { KnowledgeImportController } from './knowledge-import.controller';
 import { KnowledgeImportService } from './knowledge-import.service';
 import { WorkbookParser } from './parsers/workbook.parser';
@@ -9,6 +11,8 @@ import { ImportStorageService } from './storage/import-storage.service';
 import { KnowledgeImportApplyService } from './apply/knowledge-import-apply.service';
 
 @Module({
+  imports: [AuthModule],
+
   controllers: [KnowledgeImportController],
 
   providers: [
