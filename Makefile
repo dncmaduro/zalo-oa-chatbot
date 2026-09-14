@@ -6,7 +6,7 @@ COMPOSE ?= docker compose
 API_URL ?= http://localhost:3000
 
 .DEFAULT_GOAL := help
-.PHONY: help install dev build lint db-up db-down db-logs db-access prisma-generate migrate migrate-new seed studio prisma-format prisma-validate kb-preview kb-clear check
+.PHONY: help install dev build test lint db-up db-down db-logs db-access prisma-generate migrate migrate-new seed studio prisma-format prisma-validate kb-preview kb-clear check
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ { printf "  make %-18s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
@@ -19,6 +19,9 @@ dev: ## Run the backend in watch mode
 
 build: ## Build the backend for production
 	cd $(BACKEND_DIR) && $(YARN) build
+
+test: ## Run the backend tests
+	cd $(BACKEND_DIR) && $(YARN) test
 
 lint: ## Lint and automatically fix backend source files
 	cd $(BACKEND_DIR) && $(YARN) lint
