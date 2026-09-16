@@ -94,9 +94,9 @@ describe('LLM providers', () => {
     expect(request).toMatchObject({
       model: 'configured-chat-model',
       store: false,
-      temperature: 0,
       response_format: { type: 'json_object' },
     });
+    expect(request).not.toHaveProperty('temperature');
     expect(request).not.toHaveProperty('think');
     expect(request).not.toHaveProperty('keep_alive');
     expect(request).not.toHaveProperty('metadata');

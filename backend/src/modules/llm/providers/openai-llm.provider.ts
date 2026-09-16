@@ -16,7 +16,6 @@ export class OpenAiLlmProvider implements LlmProvider {
     const completion = await this.client.chat.completions.create({
       model: this.model,
       store: false,
-      temperature: 0,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: request.systemPrompt },
