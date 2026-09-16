@@ -40,6 +40,45 @@ export class KnowledgeImportApplyService {
     private readonly cloudinary: CloudinaryService,
   ) {}
 
+  private normalizeError(error: unknown): {
+    message: string;
+    name?: string;
+    code?: string | number;
+    httpCode?: number;
+    stack?: string;
+  } {
+    if (error instanceof Error) {
+      return {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+      };
+    }
+
+    if (typeof error === 'object' && error !== null) {
+      const value = error as Record<string, unknown>;
+
+      return {
+        message: typeof value.message === 'string' ? value.message : this.safeStringify(error),
+        name: typeof value.name === 'string' ? value.name : undefined,
+        code: typeof value.code === 'string' || typeof value.code === 'number' ? value.code : undefined,
+        httpCode: typeof value.http_code === 'number' ? value.http_code : undefined,
+      };
+    }
+
+    return {
+      message: String(error),
+    };
+  }
+
+  private safeStringify(value: unknown): string {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+
   async apply(batchId: string) {
     const batch = await this.prisma.knowledgeImportBatch.findUnique({
       where: {
@@ -130,6 +169,8 @@ export class KnowledgeImportApplyService {
         counts: this.countOperations(records),
       };
     } catch (error) {
+      const detail = this.normalizeError(error);
+
       await this.prisma.knowledgeImportBatch.updateMany({
         where: {
           id: batch.id,
@@ -137,9 +178,7 @@ export class KnowledgeImportApplyService {
         },
         data: {
           status: ImportBatchStatus.FAILED,
-          errorLog: {
-            message: error instanceof Error ? error.message : String(error),
-          },
+          errorLog: detail,
         },
       });
 
@@ -228,9 +267,17 @@ export class KnowledgeImportApplyService {
       }
 
       const targetCode = image.knowledgeCode ?? image.documentCode ?? 'shared';
-      const upload = await this.cloudinary.uploadKnowledgeImageBuffer(image.buffer, targetCode, image.imageId);
+      try {
+        const upload = await this.cloudinary.uploadKnowledgeImageBuffer(image.buffer, targetCode, image.imageId);
 
-      uploads.set(image.imageId, upload);
+        uploads.set(image.imageId, upload);
+      } catch (error) {
+        const detail = this.normalizeError(error);
+
+        throw new Error(`Cloudinary upload failed for ${image.imageId} (${targetCode}): ${detail.message}`, {
+          cause: error,
+        });
+      }
     }
 
     return uploads;
