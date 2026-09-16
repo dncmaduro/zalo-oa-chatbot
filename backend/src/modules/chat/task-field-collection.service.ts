@@ -6,6 +6,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { LlmService } from '../llm/llm.service';
 
 import { extractExplicitFieldValues } from './task-field-collection.utils';
+import { composeOperatorTaskResponse } from './operator-task-response.utils';
 
 const ELIGIBLE_STATUSES: OperatorTaskStatus[] = [
   OperatorTaskStatus.PENDING,
@@ -15,8 +16,6 @@ const ELIGIBLE_STATUSES: OperatorTaskStatus[] = [
 const NAME_FIELDS = new Set(['họ tên', 'họ và tên']);
 const NAME_PRONOUNS = new Set(['em', 'anh', 'chị', 'tôi', 'mình', 'bạn']);
 const CONTINUATION_DECISION_MAX_OUTPUT_TOKENS = 96;
-const ALL_FIELDS_COLLECTED_ACKNOWLEDGEMENT = 'Em đã nhận đủ thông tin. Bên em sẽ kiểm tra và phản hồi anh/chị sau nhé.';
-
 interface TaskInputData {
   requiredFields: string[];
   collectedFields: Record<string, string>;
@@ -350,16 +349,7 @@ export class TaskFieldCollectionService {
   }
 
   private composeResponse(missingFields: string[]): string {
-    if (missingFields.length === 0) {
-      return ALL_FIELDS_COLLECTED_ACKNOWLEDGEMENT;
-    }
-    return `Anh/chị cho em xin thêm ${this.joinFields(missingFields)} để em kiểm tra nhé.`;
-  }
-
-  private joinFields(fields: string[]): string {
-    if (fields.length === 1) return fields[0];
-    if (fields.length === 2) return `${fields[0]} và ${fields[1]}`;
-    return `${fields.slice(0, -1).join(', ')} và ${fields[fields.length - 1]}`;
+    return composeOperatorTaskResponse(missingFields);
   }
 
   private boundText(value: string | null, limit: number): string | null {

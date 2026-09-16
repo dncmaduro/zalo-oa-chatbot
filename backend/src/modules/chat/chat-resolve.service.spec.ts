@@ -101,7 +101,7 @@ describe('ChatResolveService', () => {
     expect(llm.generateStructured).not.toHaveBeenCalled();
   });
 
-  it('uses the selected knowledge item route from the KB and ignores model routing fields', async () => {
+  it('uses the selected knowledge item route from the KB and asks only for its missing operator-task fields', async () => {
     const operatorItem = knowledgeItem({
       resolutionType: ResolutionType.OPERATOR_TASK,
       requiredFields: ['Họ tên', 'Số điện thoại', 'Nhà phân phối'],
@@ -124,7 +124,7 @@ describe('ChatResolveService', () => {
     await expect(service.resolve({ message: 'Tôi là Nguyễn Văn A, số 0912345678' })).resolves.toEqual(
       expect.objectContaining({
         resolutionType: ResolutionType.OPERATOR_TASK,
-        response: 'Đã nhận thông tin, bộ phận phụ trách sẽ xử lý.',
+        response: 'Anh/chị cho em xin thêm Nhà phân phối để em kiểm tra nhé.',
         requiredFields: ['Họ tên', 'Số điện thoại', 'Nhà phân phối'],
         collectedFields: {
           'Họ tên': 'Nguyễn Văn A',
@@ -135,6 +135,60 @@ describe('ChatResolveService', () => {
         operatorInstruction: 'Tạo tài khoản sau khi kiểm tra thông tin.',
       }),
     );
+  });
+
+  it('formats every missing field for an initial operator task instead of returning its result content', async () => {
+    const operatorItem = knowledgeItem({
+      resolutionType: ResolutionType.OPERATOR_TASK,
+      content: 'Số điện thoại này đã có tài khoản rồi.',
+      initialResponse: 'Kết quả kiểm tra tài khoản.',
+      successResponseTemplate: 'Tài khoản đã tồn tại.',
+      failureResponseTemplate: 'Tài khoản chưa tồn tại.',
+      acknowledgementMessage: 'Đã nhận đủ thông tin.',
+      requiredFields: ['Họ tên', 'Số điện thoại', 'Khu vực'],
+    });
+
+    const oneMissing = await createService(
+      [knowledgeItem({ ...operatorItem, requiredFields: ['Số điện thoại'] })],
+      decision(),
+    ).service.resolve({ message: 'Số điện thoại này đã có tài khoản chưa?' });
+    expect(oneMissing).toMatchObject({
+      missingFields: ['Số điện thoại'],
+      response: 'Anh/chị cho em xin thêm Số điện thoại để em kiểm tra nhé.',
+    });
+    expect(oneMissing.response).not.toBe(operatorItem.content);
+    expect(oneMissing.response).not.toBe(operatorItem.successResponseTemplate);
+
+    const multipleMissing = await createService([operatorItem], decision()).service.resolve({ message: 'Kiểm tra tài khoản' });
+    expect(multipleMissing).toMatchObject({
+      missingFields: ['Họ tên', 'Số điện thoại', 'Khu vực'],
+      response: 'Anh/chị cho em xin thêm Họ tên, Số điện thoại và Khu vực để em kiểm tra nhé.',
+    });
+  });
+
+  it('acknowledges an initial operator task only after all fields are collected', async () => {
+    const acknowledgement = 'Đã nhận thông tin, bộ phận phụ trách sẽ xử lý.';
+    const withAcknowledgement = knowledgeItem({
+      resolutionType: ResolutionType.OPERATOR_TASK,
+      requiredFields: ['Số điện thoại'],
+      acknowledgementMessage: acknowledgement,
+      content: 'Kết quả không được trả trước.',
+      successResponseTemplate: 'Thành công không được trả trước.',
+    });
+    const acknowledged = await createService(
+      [withAcknowledgement],
+      decision({ collectedFields: { 'Số điện thoại': '0912345678' } }),
+    ).service.resolve({ message: 'Số của tôi là 0912345678' });
+    expect(acknowledged).toMatchObject({ missingFields: [], response: acknowledgement });
+
+    const fallbackAcknowledgement = await createService(
+      [knowledgeItem({ ...withAcknowledgement, acknowledgementMessage: '   ' })],
+      decision({ collectedFields: { 'Số điện thoại': '0912345678' } }),
+    ).service.resolve({ message: 'Số của tôi là 0912345678' });
+    expect(fallbackAcknowledgement).toMatchObject({
+      missingFields: [],
+      response: 'Em đã nhận đủ thông tin. Bên em sẽ kiểm tra và phản hồi anh/chị sau nhé.',
+    });
   });
 
   it('keeps uncertain Vietnamese pronouns out of required-field extraction while retaining explicit values', async () => {

@@ -6,6 +6,7 @@ import { LlmService } from '../llm/llm.service';
 import { HybridKnowledgeRetrievalService } from '../knowledge/retrieval/hybrid-knowledge-retrieval.service';
 
 import { ResolveChatDto } from './dto/resolve-chat.dto';
+import { composeOperatorTaskResponse } from './operator-task-response.utils';
 import { CHAT_RESOLVE_SYSTEM_PROMPT, ChatRagCandidate, ChatRagContextService } from './rag/chat-rag-context.service';
 
 const RETRIEVAL_CANDIDATE_LIMIT = 5;
@@ -164,7 +165,7 @@ export class ChatResolveService {
         result = {
           resolutionType: item.resolutionType,
           selectedKnowledge: this.toKnowledgeReference(selectedCandidate),
-          response: this.resolveKnowledgeItemResponse(item),
+          response: this.resolveKnowledgeItemResponse(item, missingFields),
           requiredFields,
           collectedFields,
           missingFields,
@@ -309,10 +310,13 @@ export class ChatResolveService {
     return [...new Set(fields)];
   }
 
-  private resolveKnowledgeItemResponse(item: Extract<ChatRagCandidate['result'], { type: 'KNOWLEDGE_ITEM' }>): string {
+  private resolveKnowledgeItemResponse(
+    item: Extract<ChatRagCandidate['result'], { type: 'KNOWLEDGE_ITEM' }>,
+    missingFields: string[],
+  ): string {
     switch (item.resolutionType) {
       case ResolutionType.OPERATOR_TASK:
-        return item.acknowledgementMessage ?? item.initialResponse ?? item.content;
+        return composeOperatorTaskResponse(missingFields, item.acknowledgementMessage);
       case ResolutionType.HUMAN_CONTACT:
         return item.humanContactMessage ?? this.getRequiredEnvironmentVariable('CHAT_HUMAN_CONTACT_FALLBACK_MESSAGE');
       case ResolutionType.AUTO_RESPONSE:
