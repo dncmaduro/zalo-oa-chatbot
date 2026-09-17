@@ -1,4 +1,4 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { Logger, UnauthorizedException } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { ZaloSignatureService } from './zalo-signature.service';
 import { ZaloWebhookService } from './zalo-webhook.service';
@@ -97,6 +97,21 @@ describe('Zalo webhook signature and inbox', () => {
     const { service, prisma } = harness();
     await expect(service.accept(raw, body, 'forged')).rejects.toBeInstanceOf(UnauthorizedException);
     expect(prisma.zaloWebhookEvent.create).not.toHaveBeenCalled();
+  });
+  it('logs one safe diagnostic before rejecting an invalid real event signature', async () => {
+    const { service } = harness();
+    const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+    try {
+      await expect(service.accept(raw, body, `mac=${'0'.repeat(64)}`)).rejects.toBeInstanceOf(UnauthorizedException);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(warn.mock.calls[0][0] as string)).toEqual({
+        event: 'zalo_webhook_signature_rejected', reason: 'digest_mismatch', eventName: 'user_send_text',
+        rawBodyBytes: raw.length, signaturePresent: true, signatureFormat: 'mac_prefixed',
+        timestampSource: 'body', payloadAppIdPresent: false,
+      });
+    } finally {
+      warn.mockRestore();
+    }
   });
   it('acknowledges a unique-conflict retry and marks authenticated unsupported events ignored', async () => {
     const { service, prisma } = harness();

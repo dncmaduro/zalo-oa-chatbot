@@ -15,7 +15,17 @@ export class ZaloWebhookService {
       return;
     }
     const record = this.record(body);
-    if (!this.signatures.verify(rawBody, this.timestamp(headerTimestamp, record.timestamp), signature, record.appId)) throw new UnauthorizedException('Invalid Zalo webhook signature.');
+    const timestamp = this.timestamp(headerTimestamp, record.timestamp);
+    const verification = this.signatures.verifyDetailed(rawBody, timestamp.value, signature, record.appId);
+    if (!verification.valid) {
+      this.logger.warn(JSON.stringify({
+        event: 'zalo_webhook_signature_rejected', reason: verification.reason, eventName: record.eventName,
+        rawBodyBytes: rawBody.length, signaturePresent: this.signaturePresent(signature),
+        signatureFormat: this.signatures.classifySignatureFormat(signature), timestampSource: timestamp.source,
+        payloadAppIdPresent: typeof record.appId === 'string' && record.appId.trim().length > 0,
+      }));
+      throw new UnauthorizedException('Invalid Zalo webhook signature.');
+    }
     const supported = record.eventName === 'user_send_text' && Boolean(record.messageId && record.userId && record.oaId && record.text);
     const externalEventKey = record.messageId || `${record.eventName}:${createHash('sha256').update(rawBody).digest('hex')}`;
     try {
@@ -38,8 +48,14 @@ export class ZaloWebhookService {
     return signatureIsAbsentOrEmpty && !hasMeaningfulEventName;
   }
 
-  private timestamp(headerTimestamp: unknown, bodyTimestamp: unknown): unknown {
-    return typeof headerTimestamp === 'string' && headerTimestamp.trim().length > 0 ? headerTimestamp.trim() : bodyTimestamp;
+  private timestamp(headerTimestamp: unknown, bodyTimestamp: unknown): { value: unknown; source: 'header' | 'body' | 'missing' } {
+    if (typeof headerTimestamp === 'string' && headerTimestamp.trim().length > 0) return { value: headerTimestamp.trim(), source: 'header' };
+    if (typeof bodyTimestamp === 'string' && bodyTimestamp.trim().length > 0) return { value: bodyTimestamp, source: 'body' };
+    return { value: bodyTimestamp, source: 'missing' };
+  }
+
+  private signaturePresent(signature: unknown): boolean {
+    return typeof signature === 'string' && signature.trim().length > 0;
   }
 
   private record(value: unknown) {
