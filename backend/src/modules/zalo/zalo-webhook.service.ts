@@ -10,6 +10,10 @@ export class ZaloWebhookService {
   constructor(private readonly prisma: PrismaService, private readonly signatures: ZaloSignatureService) {}
 
   async accept(rawBody: Buffer, body: unknown, signature: unknown): Promise<void> {
+    if (this.isVerificationProbe(body, signature)) {
+      this.logger.log(JSON.stringify({ event: 'zalo_webhook_verification_probe' }));
+      return;
+    }
     const record = this.record(body);
     if (!this.signatures.verify(rawBody, record.timestamp, signature)) throw new UnauthorizedException('Invalid Zalo webhook signature.');
     const supported = record.eventName === 'user_send_text' && Boolean(record.messageId && record.userId && record.oaId && record.text);
@@ -25,6 +29,13 @@ export class ZaloWebhookService {
       if (error?.code !== 'P2002') throw error;
       this.logger.log(JSON.stringify({ event: 'zalo_webhook_duplicate', eventName: record.eventName, externalMessageId: record.messageId || null }));
     }
+  }
+
+  private isVerificationProbe(value: unknown, signature: unknown): boolean {
+    const signatureIsAbsentOrEmpty = signature == null || (typeof signature === 'string' && signature.trim().length === 0);
+    const body = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+    const hasMeaningfulEventName = typeof body.event_name === 'string' && body.event_name.trim().length > 0;
+    return signatureIsAbsentOrEmpty && !hasMeaningfulEventName;
   }
 
   private record(value: unknown) {

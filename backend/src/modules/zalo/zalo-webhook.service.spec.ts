@@ -14,10 +14,26 @@ describe('Zalo webhook signature and inbox', () => {
     const prisma = { zaloWebhookEvent: { create: jest.fn().mockResolvedValue({}) } };
     return { prisma, service: new ZaloWebhookService(prisma as any, new ZaloSignatureService()) };
   };
+  it('acknowledges an unsigned empty verification probe without persisting it', async () => {
+    const { service, prisma } = harness();
+    await expect(service.accept(Buffer.from('{}'), {}, undefined)).resolves.toBeUndefined();
+    expect(prisma.zaloWebhookEvent.create).not.toHaveBeenCalled();
+  });
+  it('acknowledges an unsigned body without event_name as a verification probe without persisting it', async () => {
+    const { service, prisma } = harness();
+    const probe = { verification: true };
+    await expect(service.accept(Buffer.from(JSON.stringify(probe)), probe, '')).resolves.toBeUndefined();
+    expect(prisma.zaloWebhookEvent.create).not.toHaveBeenCalled();
+  });
   it('uses the exact raw body for a valid signed user_send_text event and persists one pending inbox row', async () => {
     const { service, prisma } = harness();
     await expect(service.accept(raw, body, signature())).resolves.toBeUndefined();
     expect(prisma.zaloWebhookEvent.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ externalEventKey: 'msg-1', status: 'PENDING' }) }));
+  });
+  it('rejects an unsigned body containing a Zalo event_name without a trusted inbox row', async () => {
+    const { service, prisma } = harness();
+    await expect(service.accept(raw, body, undefined)).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(prisma.zaloWebhookEvent.create).not.toHaveBeenCalled();
   });
   it('rejects invalid signatures without a trusted inbox row', async () => {
     const { service, prisma } = harness();
