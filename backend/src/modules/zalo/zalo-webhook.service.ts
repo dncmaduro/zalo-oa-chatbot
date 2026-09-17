@@ -9,13 +9,13 @@ export class ZaloWebhookService {
   private readonly logger = new Logger(ZaloWebhookService.name);
   constructor(private readonly prisma: PrismaService, private readonly signatures: ZaloSignatureService) {}
 
-  async accept(rawBody: Buffer, body: unknown, signature: unknown): Promise<void> {
+  async accept(rawBody: Buffer, body: unknown, signature: unknown, headerTimestamp?: unknown): Promise<void> {
     if (this.isVerificationProbe(body, signature)) {
       this.logger.log(JSON.stringify({ event: 'zalo_webhook_verification_probe' }));
       return;
     }
     const record = this.record(body);
-    if (!this.signatures.verify(rawBody, record.timestamp, signature)) throw new UnauthorizedException('Invalid Zalo webhook signature.');
+    if (!this.signatures.verify(rawBody, this.timestamp(headerTimestamp, record.timestamp), signature, record.appId)) throw new UnauthorizedException('Invalid Zalo webhook signature.');
     const supported = record.eventName === 'user_send_text' && Boolean(record.messageId && record.userId && record.oaId && record.text);
     const externalEventKey = record.messageId || `${record.eventName}:${createHash('sha256').update(rawBody).digest('hex')}`;
     try {
@@ -38,10 +38,14 @@ export class ZaloWebhookService {
     return signatureIsAbsentOrEmpty && !hasMeaningfulEventName;
   }
 
+  private timestamp(headerTimestamp: unknown, bodyTimestamp: unknown): unknown {
+    return typeof headerTimestamp === 'string' && headerTimestamp.trim().length > 0 ? headerTimestamp.trim() : bodyTimestamp;
+  }
+
   private record(value: unknown) {
     const body = value && typeof value === 'object' ? value as Record<string, any> : {};
     const message = body.message && typeof body.message === 'object' ? body.message : {};
-    return { eventName: typeof body.event_name === 'string' ? body.event_name : 'unknown', timestamp: body.timestamp,
+    return { eventName: typeof body.event_name === 'string' ? body.event_name : 'unknown', timestamp: body.timestamp, appId: body.app_id,
       messageId: typeof message.msg_id === 'string' ? message.msg_id : '', text: typeof message.text === 'string' && message.text.trim().length <= 4000 ? message.text.trim() : '',
       userId: typeof body.sender?.id === 'string' ? body.sender.id : '', oaId: typeof body.recipient?.id === 'string' ? body.recipient.id : '' };
   }

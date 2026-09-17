@@ -7,7 +7,7 @@ describe('Zalo webhook signature and inbox', () => {
   const original = { app: process.env.ZALO_APP_ID, secret: process.env.ZALO_OA_SECRET_KEY };
   const body = { event_name: 'user_send_text', timestamp: '1720000000', sender: { id: 'user-1' }, recipient: { id: 'oa-1' }, message: { msg_id: 'msg-1', text: 'Xin chào' } };
   const raw = Buffer.from(JSON.stringify(body));
-  const signature = () => createHash('sha256').update(`app-1${raw.toString()}1720000000secret-1`).digest('hex');
+  const signature = (rawBody = raw, timestamp = body.timestamp, appId = 'app-1') => createHash('sha256').update(`${appId}${rawBody.toString()}${timestamp}secret-1`).digest('hex');
   beforeEach(() => { process.env.ZALO_APP_ID = 'app-1'; process.env.ZALO_OA_SECRET_KEY = 'secret-1'; });
   afterAll(() => { process.env.ZALO_APP_ID = original.app; process.env.ZALO_OA_SECRET_KEY = original.secret; });
   const harness = () => {
@@ -25,10 +25,68 @@ describe('Zalo webhook signature and inbox', () => {
     await expect(service.accept(Buffer.from(JSON.stringify(probe)), probe, '')).resolves.toBeUndefined();
     expect(prisma.zaloWebhookEvent.create).not.toHaveBeenCalled();
   });
-  it('uses the exact raw body for a valid signed user_send_text event and persists one pending inbox row', async () => {
+  it('accepts a valid bare hexadecimal signature and persists one pending inbox row', async () => {
     const { service, prisma } = harness();
     await expect(service.accept(raw, body, signature())).resolves.toBeUndefined();
     expect(prisma.zaloWebhookEvent.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ externalEventKey: 'msg-1', status: 'PENDING' }) }));
+  });
+  it('accepts a valid mac-prefixed hexadecimal signature', async () => {
+    const { service } = harness();
+    await expect(service.accept(raw, body, `mac=${signature()}`)).resolves.toBeUndefined();
+  });
+  it('accepts a valid uppercase MAC-prefixed hexadecimal signature', async () => {
+    const { service } = harness();
+    await expect(service.accept(raw, body, `MAC=${signature()}`)).resolves.toBeUndefined();
+  });
+  it('accepts a mac prefix with whitespace around its equals sign', async () => {
+    const { service } = harness();
+    await expect(service.accept(raw, body, `mac = ${signature()}`)).resolves.toBeUndefined();
+  });
+  it('accepts surrounding whitespace around a spaced mac-prefixed signature', async () => {
+    const { service } = harness();
+    await expect(service.accept(raw, body, `  mac = ${signature()}  `)).resolves.toBeUndefined();
+  });
+  it('rejects a signature with a malformed prefix', async () => {
+    const { service, prisma } = harness();
+    await expect(service.accept(raw, body, `sha256=${signature()}`)).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(prisma.zaloWebhookEvent.create).not.toHaveBeenCalled();
+  });
+  it('rejects a well-formed but wrong digest', async () => {
+    const { service, prisma } = harness();
+    await expect(service.accept(raw, body, `mac=${'0'.repeat(64)}`)).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(prisma.zaloWebhookEvent.create).not.toHaveBeenCalled();
+  });
+  it('rejects a malformed digest', async () => {
+    const { service, prisma } = harness();
+    await expect(service.accept(raw, body, `mac=${signature().slice(1)}`)).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(prisma.zaloWebhookEvent.create).not.toHaveBeenCalled();
+  });
+  it('uses X-ZEvent-Timestamp when it is present', async () => {
+    const { service } = harness();
+    const headerTimestamp = '1720000001';
+    await expect(service.accept(raw, body, signature(raw, headerTimestamp), headerTimestamp)).resolves.toBeUndefined();
+  });
+  it('falls back to body.timestamp when X-ZEvent-Timestamp is absent', async () => {
+    const { service } = harness();
+    await expect(service.accept(raw, body, signature())).resolves.toBeUndefined();
+  });
+  it('accepts a matching payload app_id', async () => {
+    const { service } = harness();
+    const withAppId = { ...body, app_id: 'app-1' };
+    const withAppIdRaw = Buffer.from(JSON.stringify(withAppId));
+    await expect(service.accept(withAppIdRaw, withAppId, signature(withAppIdRaw))).resolves.toBeUndefined();
+  });
+  it('rejects a payload app_id that differs from the configured app ID', async () => {
+    const { service, prisma } = harness();
+    const withWrongAppId = { ...body, app_id: 'app-2' };
+    const withWrongAppIdRaw = Buffer.from(JSON.stringify(withWrongAppId));
+    await expect(service.accept(withWrongAppIdRaw, withWrongAppId, signature(withWrongAppIdRaw))).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(prisma.zaloWebhookEvent.create).not.toHaveBeenCalled();
+  });
+  it('uses the exact raw request body for digest generation', async () => {
+    const { service } = harness();
+    const formattedRaw = Buffer.from(` {\n  ${JSON.stringify(body).slice(1, -1)}\n}`);
+    await expect(service.accept(formattedRaw, body, signature(formattedRaw))).resolves.toBeUndefined();
   });
   it('rejects an unsigned body containing a Zalo event_name without a trusted inbox row', async () => {
     const { service, prisma } = harness();
