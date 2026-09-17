@@ -18,6 +18,13 @@ export class ZaloWebhookService {
     const timestamp = this.timestamp(headerTimestamp, record.timestamp);
     const verification = this.signatures.verifyDetailed(rawBody, timestamp.value, signature, record.appId);
     if (!verification.valid) {
+      if (this.isBootstrapAcknowledgement(record.eventName, signature)) {
+        this.logger.warn(JSON.stringify({
+          event: 'zalo_webhook_bootstrap_acknowledged', eventName: record.eventName,
+          verificationReason: verification.reason, rawBodyBytes: rawBody.length, signaturePresent: true,
+        }));
+        return;
+      }
       this.logger.warn(JSON.stringify({
         event: 'zalo_webhook_signature_rejected', reason: verification.reason, eventName: record.eventName,
         rawBodyBytes: rawBody.length, signaturePresent: this.signaturePresent(signature),
@@ -56,6 +63,12 @@ export class ZaloWebhookService {
 
   private signaturePresent(signature: unknown): boolean {
     return typeof signature === 'string' && signature.trim().length > 0;
+  }
+
+  private isBootstrapAcknowledgement(eventName: string, signature: unknown): boolean {
+    return process.env.ZALO_WEBHOOK_BOOTSTRAP_MODE?.trim().toLowerCase() === 'true'
+      && this.signaturePresent(signature)
+      && eventName.trim().length > 0;
   }
 
   private record(value: unknown) {

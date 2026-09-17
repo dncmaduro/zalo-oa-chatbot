@@ -4,12 +4,20 @@ import { ZaloSignatureService } from './zalo-signature.service';
 import { ZaloWebhookService } from './zalo-webhook.service';
 
 describe('Zalo webhook signature and inbox', () => {
-  const original = { app: process.env.ZALO_APP_ID, secret: process.env.ZALO_OA_SECRET_KEY };
+  const original = { app: process.env.ZALO_APP_ID, secret: process.env.ZALO_OA_SECRET_KEY, bootstrap: process.env.ZALO_WEBHOOK_BOOTSTRAP_MODE };
   const body = { event_name: 'user_send_text', timestamp: '1720000000', sender: { id: 'user-1' }, recipient: { id: 'oa-1' }, message: { msg_id: 'msg-1', text: 'Xin chào' } };
   const raw = Buffer.from(JSON.stringify(body));
   const signature = (rawBody = raw, timestamp = body.timestamp, appId = 'app-1') => createHash('sha256').update(`${appId}${rawBody.toString()}${timestamp}secret-1`).digest('hex');
-  beforeEach(() => { process.env.ZALO_APP_ID = 'app-1'; process.env.ZALO_OA_SECRET_KEY = 'secret-1'; });
-  afterAll(() => { process.env.ZALO_APP_ID = original.app; process.env.ZALO_OA_SECRET_KEY = original.secret; });
+  beforeEach(() => {
+    process.env.ZALO_APP_ID = 'app-1';
+    process.env.ZALO_OA_SECRET_KEY = 'secret-1';
+    delete process.env.ZALO_WEBHOOK_BOOTSTRAP_MODE;
+  });
+  afterAll(() => {
+    if (original.app === undefined) delete process.env.ZALO_APP_ID; else process.env.ZALO_APP_ID = original.app;
+    if (original.secret === undefined) delete process.env.ZALO_OA_SECRET_KEY; else process.env.ZALO_OA_SECRET_KEY = original.secret;
+    if (original.bootstrap === undefined) delete process.env.ZALO_WEBHOOK_BOOTSTRAP_MODE; else process.env.ZALO_WEBHOOK_BOOTSTRAP_MODE = original.bootstrap;
+  });
   const harness = () => {
     const prisma = { zaloWebhookEvent: { create: jest.fn().mockResolvedValue({}) } };
     return { prisma, service: new ZaloWebhookService(prisma as any, new ZaloSignatureService()) };
@@ -19,14 +27,16 @@ describe('Zalo webhook signature and inbox', () => {
     await expect(service.accept(Buffer.from('{}'), {}, undefined)).resolves.toBeUndefined();
     expect(prisma.zaloWebhookEvent.create).not.toHaveBeenCalled();
   });
-  it('acknowledges an unsigned body without event_name as a verification probe without persisting it', async () => {
+  it('retains unsigned harmless verification-probe behavior when bootstrap mode is enabled', async () => {
     const { service, prisma } = harness();
     const probe = { verification: true };
+    process.env.ZALO_WEBHOOK_BOOTSTRAP_MODE = 'true';
     await expect(service.accept(Buffer.from(JSON.stringify(probe)), probe, '')).resolves.toBeUndefined();
     expect(prisma.zaloWebhookEvent.create).not.toHaveBeenCalled();
   });
-  it('accepts a valid bare hexadecimal signature and persists one pending inbox row', async () => {
+  it('continues normal persistence for a valid signed event when bootstrap mode is enabled', async () => {
     const { service, prisma } = harness();
+    process.env.ZALO_WEBHOOK_BOOTSTRAP_MODE = 'true';
     await expect(service.accept(raw, body, signature())).resolves.toBeUndefined();
     expect(prisma.zaloWebhookEvent.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ externalEventKey: 'msg-1', status: 'PENDING' }) }));
   });
@@ -93,12 +103,53 @@ describe('Zalo webhook signature and inbox', () => {
     await expect(service.accept(raw, body, undefined)).rejects.toBeInstanceOf(UnauthorizedException);
     expect(prisma.zaloWebhookEvent.create).not.toHaveBeenCalled();
   });
-  it('rejects invalid signatures without a trusted inbox row', async () => {
+  it('rejects invalid signed real events when bootstrap mode is explicitly false', async () => {
+    const { service, prisma } = harness();
+    process.env.ZALO_WEBHOOK_BOOTSTRAP_MODE = 'false';
+    await expect(service.accept(raw, body, 'forged')).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(prisma.zaloWebhookEvent.create).not.toHaveBeenCalled();
+  });
+  it('rejects invalid signed real events when bootstrap mode is absent', async () => {
     const { service, prisma } = harness();
     await expect(service.accept(raw, body, 'forged')).rejects.toBeInstanceOf(UnauthorizedException);
     expect(prisma.zaloWebhookEvent.create).not.toHaveBeenCalled();
   });
-  it('logs one safe diagnostic before rejecting an invalid real event signature', async () => {
+  it('acknowledges an invalid signed real event without persistence only in bootstrap mode', async () => {
+    const { service, prisma } = harness();
+    process.env.ZALO_WEBHOOK_BOOTSTRAP_MODE = 'true';
+    await expect(service.accept(raw, body, `mac=${'0'.repeat(64)}`)).resolves.toBeUndefined();
+    expect(prisma.zaloWebhookEvent.create).not.toHaveBeenCalled();
+  });
+  it('does not bootstrap-acknowledge an unsigned real event', async () => {
+    const { service, prisma } = harness();
+    process.env.ZALO_WEBHOOK_BOOTSTRAP_MODE = 'true';
+    await expect(service.accept(raw, body, undefined)).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(prisma.zaloWebhookEvent.create).not.toHaveBeenCalled();
+  });
+  it('does not bootstrap-acknowledge a signed request with a blank event name', async () => {
+    const { service, prisma } = harness();
+    const blankEvent = { ...body, event_name: ' ' };
+    const blankEventRaw = Buffer.from(JSON.stringify(blankEvent));
+    process.env.ZALO_WEBHOOK_BOOTSTRAP_MODE = 'true';
+    await expect(service.accept(blankEventRaw, blankEvent, `mac=${'0'.repeat(64)}`)).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(prisma.zaloWebhookEvent.create).not.toHaveBeenCalled();
+  });
+  it('logs only the safe bootstrap acknowledgement diagnostic', async () => {
+    const { service } = harness();
+    const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+    try {
+      process.env.ZALO_WEBHOOK_BOOTSTRAP_MODE = 'true';
+      await expect(service.accept(raw, body, `mac=${'0'.repeat(64)}`)).resolves.toBeUndefined();
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(warn.mock.calls[0][0] as string)).toEqual({
+        event: 'zalo_webhook_bootstrap_acknowledged', eventName: 'user_send_text',
+        verificationReason: 'digest_mismatch', rawBodyBytes: raw.length, signaturePresent: true,
+      });
+    } finally {
+      warn.mockRestore();
+    }
+  });
+  it('logs the existing rejection diagnostic when bootstrap acknowledgement does not apply', async () => {
     const { service } = harness();
     const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
     try {
