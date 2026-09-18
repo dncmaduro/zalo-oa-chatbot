@@ -48,6 +48,7 @@ export const JsonNull = runtime.JsonNull;
 export const AnyNull = runtime.AnyNull;
 
 export const ModelName = {
+  ZaloOaTokenCredential: 'ZaloOaTokenCredential',
   KnowledgeItem: 'KnowledgeItem',
   KnowledgeItemVersion: 'KnowledgeItemVersion',
   KnowledgeDocument: 'KnowledgeDocument',
@@ -109,6 +110,20 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 } as const);
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel];
+
+export const ZaloOaTokenCredentialScalarFieldEnum = {
+  key: 'key',
+  encryptedAccessToken: 'encryptedAccessToken',
+  encryptedRefreshToken: 'encryptedRefreshToken',
+  accessTokenExpiresAt: 'accessTokenExpiresAt',
+  lastRefreshedAt: 'lastRefreshedAt',
+  version: 'version',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+} as const;
+
+export type ZaloOaTokenCredentialScalarFieldEnum =
+  (typeof ZaloOaTokenCredentialScalarFieldEnum)[keyof typeof ZaloOaTokenCredentialScalarFieldEnum];
 
 export const KnowledgeItemScalarFieldEnum = {
   id: 'id',

@@ -379,6 +379,7 @@ export type FieldRef<Model, FieldType> = runtime.FieldRef<Model, FieldType>;
 type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRef<Model, FieldType>;
 
 export const ModelName = {
+  ZaloOaTokenCredential: 'ZaloOaTokenCredential',
   KnowledgeItem: 'KnowledgeItem',
   KnowledgeItemVersion: 'KnowledgeItemVersion',
   KnowledgeDocument: 'KnowledgeDocument',
@@ -444,6 +445,7 @@ export type TypeMap<
   };
   meta: {
     modelProps:
+      | 'zaloOaTokenCredential'
       | 'knowledgeItem'
       | 'knowledgeItemVersion'
       | 'knowledgeDocument'
@@ -492,6 +494,80 @@ export type TypeMap<
     txIsolationLevel: TransactionIsolationLevel;
   };
   model: {
+    ZaloOaTokenCredential: {
+      payload: Prisma.$ZaloOaTokenCredentialPayload<ExtArgs>;
+      fields: Prisma.ZaloOaTokenCredentialFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.ZaloOaTokenCredentialFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ZaloOaTokenCredentialPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.ZaloOaTokenCredentialFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ZaloOaTokenCredentialPayload>;
+        };
+        findFirst: {
+          args: Prisma.ZaloOaTokenCredentialFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ZaloOaTokenCredentialPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.ZaloOaTokenCredentialFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ZaloOaTokenCredentialPayload>;
+        };
+        findMany: {
+          args: Prisma.ZaloOaTokenCredentialFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ZaloOaTokenCredentialPayload>[];
+        };
+        create: {
+          args: Prisma.ZaloOaTokenCredentialCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ZaloOaTokenCredentialPayload>;
+        };
+        createMany: {
+          args: Prisma.ZaloOaTokenCredentialCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.ZaloOaTokenCredentialCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ZaloOaTokenCredentialPayload>[];
+        };
+        delete: {
+          args: Prisma.ZaloOaTokenCredentialDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ZaloOaTokenCredentialPayload>;
+        };
+        update: {
+          args: Prisma.ZaloOaTokenCredentialUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ZaloOaTokenCredentialPayload>;
+        };
+        deleteMany: {
+          args: Prisma.ZaloOaTokenCredentialDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.ZaloOaTokenCredentialUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.ZaloOaTokenCredentialUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ZaloOaTokenCredentialPayload>[];
+        };
+        upsert: {
+          args: Prisma.ZaloOaTokenCredentialUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ZaloOaTokenCredentialPayload>;
+        };
+        aggregate: {
+          args: Prisma.ZaloOaTokenCredentialAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateZaloOaTokenCredential>;
+        };
+        groupBy: {
+          args: Prisma.ZaloOaTokenCredentialGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.ZaloOaTokenCredentialGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.ZaloOaTokenCredentialCountArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.ZaloOaTokenCredentialCountAggregateOutputType> | number;
+        };
+      };
+    };
     KnowledgeItem: {
       payload: Prisma.$KnowledgeItemPayload<ExtArgs>;
       fields: Prisma.KnowledgeItemFieldRefs;
@@ -3861,6 +3937,20 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel];
 
+export const ZaloOaTokenCredentialScalarFieldEnum = {
+  key: 'key',
+  encryptedAccessToken: 'encryptedAccessToken',
+  encryptedRefreshToken: 'encryptedRefreshToken',
+  accessTokenExpiresAt: 'accessTokenExpiresAt',
+  lastRefreshedAt: 'lastRefreshedAt',
+  version: 'version',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+} as const;
+
+export type ZaloOaTokenCredentialScalarFieldEnum =
+  (typeof ZaloOaTokenCredentialScalarFieldEnum)[keyof typeof ZaloOaTokenCredentialScalarFieldEnum];
+
 export const KnowledgeItemScalarFieldEnum = {
   id: 'id',
   code: 'code',
@@ -5108,6 +5198,7 @@ export interface PrismaClientOptionsWithAdapter extends PrismaClientBaseOptions 
  */
 export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaClientOptionsWithAdapter;
 export type GlobalOmitConfig = {
+  zaloOaTokenCredential?: Prisma.ZaloOaTokenCredentialOmit;
   knowledgeItem?: Prisma.KnowledgeItemOmit;
   knowledgeItemVersion?: Prisma.KnowledgeItemVersionOmit;
   knowledgeDocument?: Prisma.KnowledgeDocumentOmit;

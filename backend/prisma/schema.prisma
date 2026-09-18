@@ -116,6 +116,21 @@ enum ZaloOutboundDeliveryStatus {
   FAILED
 }
 
+// A singleton record for the OA used by this deployment. OAuth credentials are
+// encrypted before they reach this table; plaintext tokens are never persisted.
+model ZaloOaTokenCredential {
+  key                   String   @id
+  encryptedAccessToken  String   @map("encrypted_access_token") @db.Text
+  encryptedRefreshToken String   @map("encrypted_refresh_token") @db.Text
+  accessTokenExpiresAt  DateTime @map("access_token_expires_at") @db.Timestamptz(3)
+  lastRefreshedAt       DateTime? @map("last_refreshed_at") @db.Timestamptz(3)
+  version               Int      @default(0)
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("zalo_oa_token_credentials")
+}
+
 enum OperatorRoleCode {
   ADMIN
   LEADER

@@ -31,6 +31,24 @@
 $ yarn install
 ```
 
+## Zalo OA token bootstrap
+
+Runtime Zalo credentials are stored encrypted in PostgreSQL, not in environment variables. Configure the static values `ZALO_APP_ID`, `ZALO_APP_SECRET_KEY`, and `ZALO_TOKEN_ENCRYPTION_KEY` (32 random bytes encoded as base64 or 64 hexadecimal characters). `ZALO_OA_SECRET_KEY` remains exclusively for webhook signature verification.
+
+For a one-time migration from manually obtained credentials, set `ZALO_OA_ACCESS_TOKEN` and `ZALO_OA_REFRESH_TOKEN`, then run locally:
+
+```bash
+yarn zalo:tokens:seed
+```
+
+In the production runtime image, use the compiled command instead:
+
+```bash
+yarn zalo:tokens:seed:prod
+```
+
+This upserts the singleton `primary` credential after AES-256-GCM encryption and deliberately makes it immediately eligible for refresh. Remove both bootstrap token variables from production environment configuration after the command succeeds. They are never used by normal runtime token lookup.
+
 ## Compile and run the project
 
 ```bash

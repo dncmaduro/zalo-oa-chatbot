@@ -1117,14 +1117,6 @@ export type KnowledgeItemVersionCreatekeywordsInput = {
   set: string[];
 };
 
-export type IntFieldUpdateOperationsInput = {
-  set?: number;
-  increment?: number;
-  decrement?: number;
-  multiply?: number;
-  divide?: number;
-};
-
 export type EnumKnowledgeAudienceFieldUpdateOperationsInput = {
   set?: $Enums.KnowledgeAudience;
 };
@@ -1146,10 +1138,6 @@ export type KnowledgeItemVersionUpdateexampleQuestionsInput = {
 export type KnowledgeItemVersionUpdatekeywordsInput = {
   set?: string[];
   push?: string | string[];
-};
-
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null;
 };
 
 export type EnumKnowledgeVersionStatusFieldUpdateOperationsInput = {

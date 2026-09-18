@@ -20,7 +20,9 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "tsx prisma/seed.ts",
     "seed:prod": "node dist/prisma/seed.js",
-    "embedding:backfill": "tsx src/modules/embedding/embedding-backfill.cli.ts"
+    "embedding:backfill": "tsx src/modules/embedding/embedding-backfill.cli.ts",
+    "zalo:tokens:seed": "tsx src/modules/zalo/zalo-token-seed.cli.ts",
+    "zalo:tokens:seed:prod": "node dist/src/modules/zalo/zalo-token-seed.cli.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

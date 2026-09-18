@@ -28,8 +28,8 @@ export * from './enums';
  * const prisma = new PrismaClient({
  *   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL })
  * })
- * // Fetch zero or more KnowledgeItems
- * const knowledgeItems = await prisma.knowledgeItem.findMany()
+ * // Fetch zero or more ZaloOaTokenCredentials
+ * const zaloOaTokenCredentials = await prisma.zaloOaTokenCredential.findMany()
  * ```
  *
  * Read more in our [docs](https://pris.ly/d/client).
@@ -42,6 +42,11 @@ export type PrismaClient<
 > = $Class.PrismaClient<LogOpts, OmitOpts, ExtArgs>;
 export { Prisma };
 
+/**
+ * Model ZaloOaTokenCredential
+ *
+ */
+export type ZaloOaTokenCredential = Prisma.ZaloOaTokenCredentialModel;
 /**
  * Model KnowledgeItem
  *

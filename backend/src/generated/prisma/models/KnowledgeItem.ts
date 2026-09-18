@@ -336,14 +336,6 @@ export type KnowledgeItemNullableScalarRelationFilter = {
   isNot?: Prisma.KnowledgeItemWhereInput | null;
 };
 
-export type StringFieldUpdateOperationsInput = {
-  set?: string;
-};
-
-export type DateTimeFieldUpdateOperationsInput = {
-  set?: Date | string;
-};
-
 export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null;
 };

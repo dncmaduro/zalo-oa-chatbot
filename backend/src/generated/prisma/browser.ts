@@ -17,6 +17,11 @@ export { Prisma };
 export * as $Enums from './enums';
 export * from './enums';
 /**
+ * Model ZaloOaTokenCredential
+ *
+ */
+export type ZaloOaTokenCredential = Prisma.ZaloOaTokenCredentialModel;
+/**
  * Model KnowledgeItem
  *
  */

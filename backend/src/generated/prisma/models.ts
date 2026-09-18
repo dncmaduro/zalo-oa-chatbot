@@ -7,6 +7,7 @@
  *
  * 🟢 You can import this file directly.
  */
+export type * from './models/ZaloOaTokenCredential';
 export type * from './models/KnowledgeItem';
 export type * from './models/KnowledgeItemVersion';
 export type * from './models/KnowledgeDocument';
