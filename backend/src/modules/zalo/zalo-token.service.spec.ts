@@ -14,7 +14,7 @@ describe('ZaloTokenService', () => {
 
   function setup(row: ReturnType<typeof credential>) {
     const delegate = { findUnique: jest.fn().mockResolvedValue(row), update: jest.fn().mockResolvedValue({}) };
-    const transaction = { $queryRawUnsafe: jest.fn().mockResolvedValue([]), zaloOaTokenCredential: delegate };
+    const transaction = { $executeRawUnsafe: jest.fn().mockResolvedValue(1), zaloOaTokenCredential: delegate };
     const prisma = { zaloOaTokenCredential: delegate, $transaction: jest.fn(async (callback: any) => callback(transaction)) };
     return { prisma, delegate, transaction, service: new ZaloTokenService(prisma as any, encryption) };
   }
@@ -41,7 +41,9 @@ describe('ZaloTokenService', () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ access_token: 'new-access', refresh_token: 'new-refresh', expires_in: '90000' }) }) as any;
     const before = Date.now();
     await expect(service.getValidAccessToken()).resolves.toBe('new-access');
-    expect(transaction.$queryRawUnsafe).toHaveBeenCalledWith(expect.stringContaining('pg_advisory_xact_lock'));
+    expect(transaction.$executeRawUnsafe).toHaveBeenCalledWith(expect.stringContaining('pg_advisory_xact_lock'));
+    // The first lookup decides whether to enter the transaction; the second is the required locked reload.
+    expect(transaction.$executeRawUnsafe.mock.invocationCallOrder[0]).toBeLessThan(delegate.findUnique.mock.invocationCallOrder[1]);
     expect(global.fetch).toHaveBeenCalledWith('https://oauth.zaloapp.com/v4/oa/access_token', expect.objectContaining({
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', secret_key: 'application-secret' },
       body: 'app_id=app-id&grant_type=refresh_token&refresh_token=old-refresh',
@@ -56,18 +58,20 @@ describe('ZaloTokenService', () => {
   it('re-checks expiry under the advisory lock and avoids a second refresh', async () => {
     const initial = credential('old-access', 'old-refresh', new Date(Date.now() + 1_000));
     const updated = credential('other-access', 'other-refresh', new Date(Date.now() + 3_600_000));
-    const { service, delegate } = setup(initial);
+    const { service, delegate, transaction } = setup(initial);
     delegate.findUnique.mockResolvedValueOnce(initial).mockResolvedValueOnce(updated);
     global.fetch = jest.fn();
     await expect(service.getValidAccessToken()).resolves.toBe('other-access');
+    expect(transaction.$executeRawUnsafe.mock.invocationCallOrder[0]).toBeLessThan(delegate.findUnique.mock.invocationCallOrder[1]);
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
   it('does not refresh after an auth failure when another worker already replaced the access token', async () => {
-    const { service, delegate } = setup(credential('new-access'));
+    const { service, delegate, transaction } = setup(credential('new-access'));
     delegate.findUnique.mockResolvedValue(credential('new-access'));
     global.fetch = jest.fn();
     await expect(service.refreshAfterAuthFailure('failed-access')).resolves.toBe('new-access');
+    expect(transaction.$executeRawUnsafe.mock.invocationCallOrder[0]).toBeLessThan(delegate.findUnique.mock.invocationCallOrder[0]);
     expect(global.fetch).not.toHaveBeenCalled();
   });
 

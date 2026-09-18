@@ -42,7 +42,7 @@ export class ZaloTokenService {
 
   private async refreshWithLock(reason: 'proactive' | 'authentication_failure', failedAccessToken?: string): Promise<string> {
     return this.prisma.$transaction(async (transaction) => {
-      await transaction.$queryRawUnsafe(REFRESH_ADVISORY_LOCK_SQL);
+      await transaction.$executeRawUnsafe(REFRESH_ADVISORY_LOCK_SQL);
       const credential = await transaction.zaloOaTokenCredential.findUnique({ where: { key: PRIMARY_CREDENTIAL_KEY } });
       if (!credential) throw new ZaloTokenConfigurationError('Zalo OA token credential is not configured. Run yarn zalo:tokens:seed.');
       const currentAccessToken = this.decryptAccessToken(credential);
